@@ -7,6 +7,7 @@
 #include "assetsmanager.h"
 #include <memory>
 #include "neuralnet.h"
+#include "Config.h"
 
 namespace Ui {
   class MainWindow;
@@ -36,6 +37,7 @@ private:
   unsigned int NextId_;
   std::unique_ptr<AssetsManager> assets_;
   std::unique_ptr<NeuralNet> neurnet_;
+  std::shared_ptr<Config> config_;
 
 
   void updateAll();

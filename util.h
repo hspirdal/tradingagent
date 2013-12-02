@@ -10,6 +10,8 @@ class Util
 {
 public:
   static QList<QStringList>  loadCSVFile(const QString& filename, QChar separator);
+  // Just the very basic ini format: key=val, ignoring lines starting with [ or ; ([section, ;comment).
+  static QMap<QString, QMap<QString, QString> > loadIniFile(const QString& filename);
   static QMap<QDateTime, double> extractSystemPriceDaily(const QList<QStringList>& dataMatrix);
   static QList<QStringList> loadCSVFiles(const QList<QString>& filenames, QChar separator);
   static bool writeFile(const std::string& filename, const std::string& content, bool overwrite = false);

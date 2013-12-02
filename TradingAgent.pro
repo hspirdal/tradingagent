@@ -31,7 +31,9 @@ HEADERS  += mainwindow.h \
     neuralnet.h \
     util.h \
     constants.h \
-    TrainingSet.h
+    TrainingSet.h \
+    Config.h \
+    NeuralConfig.h
 
 FORMS    += mainwindow.ui
 

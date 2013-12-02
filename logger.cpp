@@ -8,7 +8,12 @@ Logger::Logger(QString logfile)
 {
 }
 
-void Logger::append(QString message)
+void Logger::append(QString message, bool writeDebug)
+{
+  append(message, logfile_, writeDebug);
+}
+
+void Logger::append(QString message, QString logfile, bool writeDebug)
 {
   std::ifstream in(logfile_.toStdString());
   std::string prevContents = std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -17,5 +22,6 @@ void Logger::append(QString message)
   out << prevContents << message.toStdString() << std::endl;
   out.close();
 
-  qDebug() << message;
+  if(writeDebug)
+    qDebug() << "Log:" << logfile << "-" << message;
 }

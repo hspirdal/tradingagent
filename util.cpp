@@ -4,6 +4,8 @@
 #include <assert.h>
 #include "constants.h"
 #include <fstream>
+#include <assert.h>
+#include "logger.h"
 
 Util::Util()
 {
@@ -42,6 +44,49 @@ QList<QStringList> Util::loadCSVFiles(const QList<QString> &filenames, QChar sep
   return dataMatrix;
 }
 
+QMap<QString, QMap<QString, QString> > Util::loadIniFile(const QString &filename)
+{
+  QFile file(filename);
+  QMap<QString, QMap<QString, QString> > mainMap;
+  QMap<QString, QString> keyvalMap;
+  QString currentSection = "";
+  if(file.open(QFile::ReadOnly))
+  {
+    QTextStream in(&file);
+    in.setCodec("UTF-8");
+    while(!in.atEnd())
+    {
+      QString line = in.readLine().trimmed();
+
+      // Check if we're at a new section.
+      if(line.startsWith('['))
+      {
+        // first remove [ and ]
+        line = line.remove(0, 1);
+        line = line.remove(line.length()-1, 1);
+        currentSection = line;
+        keyvalMap = QMap<QString, QString>();
+        mainMap.insert(currentSection, keyvalMap);
+        continue;
+      }
+
+      // Ignore empty lines or lines starting with ;comment
+      if(line.isEmpty() || line.startsWith(';'))
+        continue;
+
+      if(!line.contains('=')) Logger::get().append("Util.LoadIniFile: unexpected line format.", "global.log", true);
+      if(currentSection.isEmpty()) Logger::get().append("Util.LoadIniFile: section must be set before keyval lines.", "global.log", true);
+
+      // key=val format
+      QStringList keyval = line.split('=');
+      assert(keyval.count() == 2);
+      QMap<QString, QString>& keyvalMap = mainMap[currentSection];
+      keyvalMap.insert(keyval[0], keyval[1]);
+    }
+  }
+  return mainMap;
+}
+
 QMap<QDateTime, double> Util::extractSystemPriceDaily(const QList<QStringList> &dataMatrix)
 {
   unsigned int lineno = 0;
@@ -66,11 +111,13 @@ QMap<QDateTime, double> Util::extractSystemPriceDaily(const QList<QStringList> &
     // The number columns are wrapped in "xx,xx". Remove those.
     double sys = sysprice.remove('"').toDouble();
     assert(sys > Constants::ApproxZeroDouble && "Price was zero or less, which is unexpected and probably a bug.");
-    qDebug() << date.toString() << QString::number(sys);
+    //qDebug() << date.toString() << QString::number(sys);
     prices.insert(date, sys);
   }
   return prices;
 }
+
+
 
 bool Util::writeFile(const std::string& filename, const std::string& content, bool overwrite)
 {

@@ -1,9 +1,13 @@
 #include "neuralnet.h"
 #include <QDebug>
+#include "logger.h"
 
-
-NeuralNet::NeuralNet(QString nameset, unsigned int numDayPeriod)
-: nameset_(nameset), MaxPriceExpected_(1000.0), numDayPeriod_(numDayPeriod), numOutputs_(1.0)
+NeuralNet::NeuralNet(const NeuralConfig& config)
+:
+  config_(config),
+  Nameset_(config.Nameset_), MaxPriceExpected_(config.MaxPriceExpected_), DayAheadShort_(config.DayAheadShort_),
+  DayAheadLong_(config.DayAheadLong_), NumLayers_(config.NumLayers_), NumNeuronsHidden_(config.NumNeuronsHidden_),
+  NumOutputs_(config.NumOutputs_), DesiredError_(config.DesiredError_), MaxEpochs_(config.MaxEpochs_), EpochsBetweenReports_(config.EpochsBetweenReports_)
 {
 }
 
@@ -16,17 +20,19 @@ NeuralNet::~NeuralNet()
   trainingSets_.clear();
 }
 
+
+
 void NeuralNet::createTrainSet(const QString& trainSetName, const QMap<QDateTime, double>& spotprices)
 {  
-  trainingSets_.append(new DataTrainSet(trainSetName, numDayPeriod_, numOutputs_));
+  trainingSets_.append(new DataTrainSet(trainSetName, DayAheadLong_, NumOutputs_));
 
   unsigned int rownum = 0;
   std::vector<double> dayprices;
 
   std::deque<double> priceWindow;
   std::deque<double> aheadPriceWindow;
-  assert(spotprices.size() > static_cast<int>(numDayPeriod_) && "period less than window");
-  auto ahead_itr = spotprices.begin() + numDayPeriod_;
+  assert(spotprices.size() > static_cast<int>(DayAheadLong_) && "period less than window");
+  auto ahead_itr = spotprices.begin() + DayAheadLong_;
   for(auto itr = spotprices.begin(); itr != spotprices.end(); ++itr)
   {
     // Problem: at the end of the dataset will probably have overflow < numDayPeriod.
@@ -46,7 +52,7 @@ void NeuralNet::createTrainSet(const QString& trainSetName, const QMap<QDateTime
       ++rownum;
       window(itr, priceWindow);
 
-      if(static_cast<int>(rownum + numDayPeriod_) >= spotprices.size())
+      if(static_cast<int>(rownum + DayAheadLong_) >= spotprices.size())
       {
         qDebug() << "lookahead at end. breaking out.";
         break;
@@ -54,9 +60,9 @@ void NeuralNet::createTrainSet(const QString& trainSetName, const QMap<QDateTime
       window(++ahead_itr, aheadPriceWindow);
 
 
-      if(priceWindow.size() >= numDayPeriod_)
+      if(priceWindow.size() >= DayAheadLong_)
       {
-        assert(priceWindow.size() == numDayPeriod_ && "size 'when full' should be exactly like numDayPeriod.");
+        assert(priceWindow.size() == DayAheadLong_ && "size 'when full' should be exactly like numDayPeriod.");
         assert(aheadPriceWindow.size() == priceWindow.size() && "unexpected size difference.");
 
         trainingSets_.last()->appendRow(priceWindow, aheadPriceWindow);
@@ -71,7 +77,7 @@ void NeuralNet::window(QMap<QDateTime, double>::const_iterator itr, std::deque<d
   const double ptprice = itr.value() / MaxPriceExpected_;
   assert(Util::lessEqualAbs(ptprice, 1.0));
   priceWindow.push_back(ptprice);
-  if(priceWindow.size() > numDayPeriod_)
+  if(priceWindow.size() > DayAheadLong_)
     priceWindow.pop_front();
 }
 
@@ -83,13 +89,13 @@ void NeuralNet::train()
 
 void NeuralNet::trainSet(DataTrainSet &set)
 {
-  const unsigned int num_input = numDayPeriod_;
-  const unsigned int num_output = numOutputs_;
-  const unsigned int num_layers = 3;
-  const unsigned int num_neurons_hidden = 16;
-  const float desired_error = (const float) 0.0001;
-  const unsigned int max_epochs = 10000;
-  const unsigned int epochs_between_reports = 10;
+  const unsigned int num_input = DayAheadLong_;
+  const unsigned int num_output = NumOutputs_;
+  const unsigned int num_layers = NumLayers_;
+  const unsigned int num_neurons_hidden = NumNeuronsHidden_;
+  const float desired_error = DesiredError_;
+  const unsigned int max_epochs = MaxEpochs_;
+  const unsigned int epochs_between_reports = EpochsBetweenReports_;
 
 
   FANN::neural_net nn;
@@ -98,8 +104,6 @@ void NeuralNet::trainSet(DataTrainSet &set)
     // something bad happened.
     assert(false);
   }
-
-  qDebug() << "create_std ran";
 
   nn.set_activation_function_hidden(FANN::SIGMOID_SYMMETRIC);
   nn.set_activation_function_output(FANN::SIGMOID_SYMMETRIC);
@@ -115,11 +119,11 @@ void NeuralNet::trainSet(DataTrainSet &set)
   qDebug() << "we're done training.";
 }
 
-void NeuralNet::estimateNextPeriod(const QMap<QDateTime, double>& spotprices, QDateTime start, unsigned int numDaysPeriod)
+void NeuralNet::estimateNextPeriod(const QMap<QDateTime, double>& spotprices, QDateTime startdate, unsigned int numDaysPeriod, unsigned int numDaysAhead)
 {
   std::deque<double> priceWindow;
   std::deque<double> aheadPriceWindow;
-  slidingWindowPrices(spotprices, start, numDaysPeriod, priceWindow, aheadPriceWindow);
+  slidingWindowPrices(spotprices, startdate, numDaysPeriod, numDaysAhead, priceWindow, aheadPriceWindow);
   FANN::neural_net nn;
   nn.create_from_file(fullNeuralFileName().toStdString());
 
@@ -143,19 +147,12 @@ void NeuralNet::estimateNextPeriod(const QMap<QDateTime, double>& spotprices, QD
   qDebug() << "Percent error: " << predAvgNextPeriod / actualAvgNextPeriod;
 }
 
-void NeuralNet::windowPriceEstimation(QMap<QDateTime, double>::const_iterator itr, std::deque<double> &priceWindow, QDateTime start, unsigned int numDaysPeriod)
-{
-  QDateTime endPeriod = start.addDays(numDaysPeriod);
-  if(itr.key() >= start && itr.key() < endPeriod)
-    window(itr, priceWindow);
-}
-
-void NeuralNet::slidingWindowPrices(const QMap<QDateTime, double>& spotprices, QDateTime start, unsigned int numDaysPeriod,
+void NeuralNet::slidingWindowPrices(const QMap<QDateTime, double>& spotprices, QDateTime start, unsigned int numDaysPeriod, unsigned int numDaysAhead,
     std::deque<double>& priceWindow, std::deque<double>& aheadPriceWindow)
 {
-  QDateTime aheadDate_start = start.addDays(numDaysPeriod);
+  QDateTime aheadDate_start = start.addDays(numDaysAhead);
   assert(spotprices.size() > static_cast<int>(numDaysPeriod) && "period less than window");
-  auto ahead_itr = spotprices.begin() + numDaysPeriod;
+  auto ahead_itr = spotprices.begin() + numDaysAhead;
   unsigned int numRows = 0;
   for(auto itr = spotprices.begin(); itr != spotprices.end(); ++itr)
   {
@@ -170,31 +167,22 @@ void NeuralNet::slidingWindowPrices(const QMap<QDateTime, double>& spotprices, Q
     windowPriceEstimation(++ahead_itr, aheadPriceWindow, aheadDate_start, numDaysPeriod);
   }
 
-  assert(priceWindow.size() == numDaysPeriod && aheadPriceWindow.size() == numDaysPeriod && "unexpected number of values.");
+  assert(priceWindow.size() == DayAheadLong_ && aheadPriceWindow.size() == DayAheadLong_ && "unexpected number of values.");
+}
 
-
-
-//  std::vector<double> dayprices;
-//  QDateTime endPeriod = start.addDays(numDaysPeriod);
-//  for(auto itr = spotprices.begin(); itr != spotprices.end(); ++itr)
-//  {
-//    if(itr.key() >= start && itr.key() < endPeriod)
-//    {
-//      const double ptprice = itr.value() / MaxPriceExpected_;
-//      assert(Util::lessEqualAbs(ptprice, 1.0));
-//      dayprices.push_back(ptprice);
-//    }
-//  }
-//  assert(dayprices.size() == numDaysPeriod && "unexpected number of values.");
-//  return dayprices;
+void NeuralNet::windowPriceEstimation(QMap<QDateTime, double>::const_iterator itr, std::deque<double> &priceWindow, QDateTime start, unsigned int numDaysPeriod)
+{
+  QDateTime endPeriod = start.addDays(numDaysPeriod);
+  if(itr.key() >= start && itr.key() < endPeriod)
+    window(itr, priceWindow);
 }
 
 QString NeuralNet::fullDataTrainFileName(const DataTrainSet &set) const
 {
-  return this->nameset_ + "_" + set.name() + ".train";
+  return this->Nameset_ + "_" + set.name() + ".train";
 }
 
 QString NeuralNet::fullNeuralFileName() const
 {
-  return this->nameset_ + ".net";
+  return this->Nameset_ + ".net";
 }

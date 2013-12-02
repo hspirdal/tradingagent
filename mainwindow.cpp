@@ -5,21 +5,27 @@
 #include <QFileInfo>
 #include "util.h"
 #include "constants.h"
+#include "NeuralConfig.h"
 
 MainWindow::MainWindow(QWidget *parent)
-: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), assets_(new AssetsManager()), neurnet_(new NeuralNet("testset", NumDaysAhead_))
+: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), assets_(new AssetsManager())
 {
   ui->setupUi(this);
 
-  assets_->setMoney(1000000);
-  assets_->setEnergy(1000000);
-  assets_->setRealSystemPrice(113.0);
+  config_ = std::make_shared<Config>(Util::loadIniFile("config.ini"));
+  neurnet_ = std::unique_ptr<NeuralNet>(new NeuralNet(config_.get()->neuralConfig()));
+
+  assets_->setMoney(config_.get()->assetsConfig().Money_);
+  assets_->setEnergy(config_.get()->assetsConfig().Energy_);
+  assets_->setRealSystemPrice(config_.get()->assetsConfig().LastSysPrice_);
   updateAll();
 
   QList<QString> files = {"Data/Elspot Prices_2011_Daily_NOK.csv", "Data/Elspot Prices_2012_Daily_NOK.csv", "Data/Elspot Prices_2013_Daily_NOK.csv"};
   QList<QStringList> dataMatrix = Util::loadCSVFiles(files, ',');
   auto prices = Util::extractSystemPriceDaily(dataMatrix);
   neurnet_->createTrainSet("2011_2013_daily_NOK", prices);
+
+  qDebug() << config_.get()->toString();
 }
 
 MainWindow::~MainWindow()
@@ -45,6 +51,7 @@ void MainWindow::updateAll()
 {
   ui->lblCurrMoney->setText(QString::number(assets_->money()));
   ui->lblCurrEnergy->setText(QString::number(assets_->energy()));
+
 }
 
 void MainWindow::on_btnBuyAmount_clicked()
@@ -66,7 +73,7 @@ void MainWindow::on_btnPredict_clicked()
 
   QDateTime fromdate;
   fromdate.setDate(QDate(2013, 10 , 1));
-  neurnet_->estimateNextPeriod(prices, fromdate, NumDaysAhead_);
+  neurnet_->estimateNextPeriod(prices, fromdate, config_.get()->neuralConfig().DayAheadLong_, NumDaysAhead_);
 }
 
 
