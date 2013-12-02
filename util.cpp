@@ -117,7 +117,33 @@ QMap<QDateTime, double> Util::extractSystemPriceDaily(const QList<QStringList> &
   return prices;
 }
 
+double Util::parseNordpoolSpotpriceNOK(const QString html)
+{
+    static const QString Official = "<td class=\"price-official\" title=\"Official\">";
+    static const QString Preliminary = "<td class=\"preliminary\" title=\"Preliminary\">";
+    static const QString EndTDtag = "</td>";
 
+    int start_NOKpriceIndex = 0;
+    int end_NOKpriceIndex = 0;
+    if(html.contains(Official))
+    {
+      int first = html.indexOf(Official) +  Official.length();
+      start_NOKpriceIndex = html.indexOf(Official, first) + Official.length();
+    }
+    else if(html.contains(Preliminary))
+    {
+      int first = html.indexOf(Preliminary) +  Preliminary.length();
+      start_NOKpriceIndex = html.indexOf(Preliminary, first) + Preliminary.length();
+    }
+    end_NOKpriceIndex = html.indexOf(EndTDtag, start_NOKpriceIndex);
+    QString pricestring = html.mid(start_NOKpriceIndex, end_NOKpriceIndex-start_NOKpriceIndex);
+    double spotprice = pricestring.replace(',', '.').toDouble();
+
+    if(spotprice <= 0.0)
+      Logger::get().append("ParseNordpool: spotprice was not parsed correctly! Pricestring:" + pricestring , true);
+
+    return spotprice;
+}
 
 bool Util::writeFile(const std::string& filename, const std::string& content, bool overwrite)
 {

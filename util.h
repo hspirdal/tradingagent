@@ -14,6 +14,7 @@ public:
   static QMap<QString, QMap<QString, QString> > loadIniFile(const QString& filename);
   static QMap<QDateTime, double> extractSystemPriceDaily(const QList<QStringList>& dataMatrix);
   static QList<QStringList> loadCSVFiles(const QList<QString>& filenames, QChar separator);
+  static double parseNordpoolSpotpriceNOK(const QString html);
   static bool writeFile(const std::string& filename, const std::string& content, bool overwrite = false);
 
   static bool lessEqualAbs(double a, double b, double epsilon = 10e-8)

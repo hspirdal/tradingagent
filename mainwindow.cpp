@@ -8,7 +8,7 @@
 #include "NeuralConfig.h"
 
 MainWindow::MainWindow(QWidget *parent)
-: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), assets_(new AssetsManager())
+: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), assets_(new AssetsManager()), network_(new QNetworkAccessManager(this))
 {
   ui->setupUi(this);
 
@@ -25,7 +25,12 @@ MainWindow::MainWindow(QWidget *parent)
   auto prices = Util::extractSystemPriceDaily(dataMatrix);
   neurnet_->createTrainSet("2011_2013_daily_NOK", prices);
 
-  qDebug() << config_.get()->toString();
+  //connect(nam_, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
+
+  QObject::connect(network_.get(), SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
+
+
+  network_.get()->get(QNetworkRequest(QUrl("http://www.nordpoolspot.com/")));
 }
 
 MainWindow::~MainWindow()
@@ -74,6 +79,21 @@ void MainWindow::on_btnPredict_clicked()
   QDateTime fromdate;
   fromdate.setDate(QDate(2013, 10 , 1));
   neurnet_->estimateNextPeriod(prices, fromdate, config_.get()->neuralConfig().DayAheadLong_, NumDaysAhead_);
+}
+
+void MainWindow::onReply(QNetworkReply *reply)
+{
+  if(reply->error() == QNetworkReply::NoError)
+  {
+    double spotprice = Util::parseNordpoolSpotpriceNOK(QString(reply->readAll()));
+    ui->lblSpotPrice->setText(QString::number(spotprice));
+  }
+  else
+  {
+    qDebug() << reply->errorString();
+    Logger::get().append(reply->errorString(), true);
+  }
+  reply->deleteLater();
 }
 
 

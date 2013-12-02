@@ -84,12 +84,12 @@
        <rect>
         <x>80</x>
         <y>100</y>
-        <width>121</width>
+        <width>41</width>
         <height>16</height>
        </rect>
       </property>
       <property name="text">
-       <string>Buy at 113 NOK</string>
+       <string>Buy at</string>
       </property>
      </widget>
      <widget class="QPushButton" name="btnTrain">
@@ -116,6 +116,19 @@
       </property>
       <property name="text">
        <string>Predict</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lblSpotPrice">
+      <property name="geometry">
+       <rect>
+        <x>130</x>
+        <y>100</y>
+        <width>41</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>113</string>
       </property>
      </widget>
     </widget>

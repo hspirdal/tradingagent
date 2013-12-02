@@ -8,6 +8,8 @@
 #include <memory>
 #include "neuralnet.h"
 #include "Config.h"
+#include <QNetworkReply>
+#include <QNetworkAccessManager>
 
 namespace Ui {
   class MainWindow;
@@ -22,6 +24,7 @@ public:
   ~MainWindow();
 
 private slots:
+  void onReply(QNetworkReply* reply);
   void on_btnAddSet_clicked();
 
   void on_btnBuyAmount_clicked();
@@ -38,6 +41,7 @@ private:
   std::unique_ptr<AssetsManager> assets_;
   std::unique_ptr<NeuralNet> neurnet_;
   std::shared_ptr<Config> config_;
+  std::unique_ptr<QNetworkAccessManager> network_;
 
 
   void updateAll();
