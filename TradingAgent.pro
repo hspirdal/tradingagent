@@ -22,7 +22,8 @@ SOURCES += main.cpp\
     logger.cpp \
     transactionlogger.cpp \
     neuralnet.cpp \
-    util.cpp
+    util.cpp \
+    agentcontroller.cpp
 
 HEADERS  += mainwindow.h \
     assetsmanager.h \
@@ -33,7 +34,9 @@ HEADERS  += mainwindow.h \
     constants.h \
     TrainingSet.h \
     Config.h \
-    NeuralConfig.h
+    NeuralConfig.h \
+    agentcontroller.h \
+    Order.h
 
 FORMS    += mainwindow.ui
 

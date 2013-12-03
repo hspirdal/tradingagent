@@ -3,14 +3,18 @@
 
 #include "transactionlogger.h"
 #include <memory>
+#include <queue>
+#include "constants.h"
+#include <Config.h>
+#include "Order.h"
 
 class AssetsManager
 {
 public:
-  AssetsManager();
+  AssetsManager(std::shared_ptr<Config> config);
 
-  bool buyEnergy(unsigned int amount);
-  bool sellEnergy(unsigned int amount);
+  bool setupBuyEnergyOrder(double amount, double predictedPrice);
+  bool setupSellEnergy(double amount, double predictedPrice);
 
   double money() const { return money_; }
   double energy() const { return energy_; }
@@ -18,12 +22,25 @@ public:
   void setMoney(double money);
   void setEnergy(double energy);
   void setRealSystemPrice(double sysPriceReal) { sysPriceReal_ = sysPriceReal; }
+  void completeRemainingTransactions();
+
+  bool NegativeMoneyFlag() const { return money() < Constants::ApproxZeroDouble; }
+
+  bool rule_moneyLowEnergyHigh();
+  bool rule_moneyHighEnergyLow();
 
 private:
+  std::shared_ptr<Config> config_;
   double money_;
   double energy_;
-  std::unique_ptr<TransactionLogger> log_;
   double sysPriceReal_;
+  std::unique_ptr<TransactionLogger> log_;
+  std::queue<Order> remainingOrders_;
+
+
+
+  const double StartingMoney = 1000000.0;
+  const double StartingEnergy = 500;
 
   // Temp methods that should later hold more rigorous checking typical for any transaction apps.
   void withdrawFunds(double amount) { money_ -= amount; }

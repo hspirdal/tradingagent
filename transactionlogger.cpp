@@ -1,41 +1,85 @@
 #include "transactionlogger.h"
 
-TransactionLogger::TransactionLogger(QString logfile, QString email)
-  : Logger(logfile), email_(email), sendEmail_(false), smtp_(new SmtpClient("smtp.gmail.com", 465, SmtpClient::SslConnection))
+TransactionLogger::TransactionLogger(QString logfile, const AgentInfoConfig& config)
+  : Logger(logfile), config_(config), sendEmail_(config.SendEmail_), smtp_(new SmtpClient(config.SmtpClient_, config.SmtpPort_, SmtpClient::SslConnection))
 {
 
-  smtp_->setUser("john.baugen@gmail.com");
-  smtp_->setPassword("jobaJOBA");
+  smtp_->setUser(config.SmtpAddr_);
+  smtp_->setPassword(config.SmtpPassw_);
 }
 
 
-void TransactionLogger::insufficientFundsBuying(unsigned int amount, double unitPrice, double currentFunds)
+//void TransactionLogger::insufficientFundsBuying(unsigned int amount, double unitPrice, double currentFunds)
+//{
+//  this->append(QString("Insuffcient funds to complete transaction of %1 energy at price %2. Current funds: %3.").arg(QString::number(amount),
+//  QString::number(unitPrice), QString::number(currentFunds)));
+//}
+
+//void TransactionLogger::insufficientEnergySelling(unsigned int amount, double unitPrice, double currentEnergyStored)
+//{
+//  this->append(QString("Insuffcient amount of energy to complete transaction of %1 energy at price %2. Current amount stored: %3.").arg(QString::number(amount),
+//  QString::number(unitPrice), QString::number(currentEnergyStored)));
+//}
+
+//void TransactionLogger::appendBuyEnergy(unsigned int amount, double unitPrice, double currentFundsTotal, double currentEnergyTotal)
+//{
+//  QString msg = QString("Bought %1 amount of energy at %2 NOK. Current funds: %3. Current amount of energy: %4").arg(QString::number(amount),
+//   QString::number(unitPrice), QString::number(currentFundsTotal), QString::number(currentEnergyTotal));
+//  this->append(msg);
+//}
+
+
+//void TransactionLogger::appendSellEnergy(unsigned int amount, double unitPrice, double currentFundsTotal, double currentEnergyTotal)
+//{
+//  this->append(QString("Sold %1 amount of energy at %2 NOK. Current funds: %3. Current amount of energy: %4").arg(QString::number(amount),
+//   QString::number(unitPrice), QString::number(currentFundsTotal), QString::number(currentEnergyTotal)));
+//}
+
+void TransactionLogger::logBuyEnergyOrder(Order order)
 {
-  this->append(QString("Insuffcient funds to complete transaction of %1 energy at price %2. Current funds: %3.").arg(QString::number(amount),
-  QString::number(unitPrice), QString::number(currentFunds)));
+  QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Target prediction date: %3. Estimated Price: %4. OrderID: %5. Purchase of %6 Mwh").arg(
+    QString::number(config_.AgentId_), order.dateTime_.toString(), order.targetPredictionDate().toString(), QString::number(order.predictedUnitPrice_),
+    QString::number(order.orderNumber_), QString::number(order.boughtAmountEnergy_));
+
+  this->append(msg, true);
+  sendMail(config_.receiverEmail_, "Bought energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail2_, "Bought energy - Halvor Spirdal", msg);
+
 }
 
-void TransactionLogger::insufficientEnergySelling(unsigned int amount, double unitPrice, double currentEnergyStored)
+void TransactionLogger::logSellEnergyOrder(Order order)
 {
-  this->append(QString("Insuffcient amount of energy to complete transaction of %1 energy at price %2. Current amount stored: %3.").arg(QString::number(amount),
-  QString::number(unitPrice), QString::number(currentEnergyStored)));
+  QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Target prediction date: %3. Estimated Price: %4. OrderID: %5. Selling of %6 Mwh").arg(
+    QString::number(config_.AgentId_), order.dateTime_.toString(), order.targetPredictionDate().toString(), QString::number(order.predictedUnitPrice_),
+    QString::number(order.orderNumber_), QString::number(order.boughtAmountEnergy_));
+
+  this->append(msg, true);
+  sendMail(config_.receiverEmail_, "Selling energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail2_, "Selling energy - Halvor Spirdal", msg);
 }
 
-void TransactionLogger::appendBuyEnergy(unsigned int amount, double unitPrice, double currentFundsTotal, double currentEnergyTotal)
+void TransactionLogger::logTransferBoughtEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice)
 {
-  QString msg = QString("Bought %1 amount of energy at %2 NOK. Current funds: %3. Current amount of energy: %4").arg(QString::number(amount),
-   QString::number(unitPrice), QString::number(currentFundsTotal), QString::number(currentEnergyTotal));
-  this->append(msg);
+  QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Transferred over %3 Mwh energy (UnitPrice: %4). OrderID: %5. Total energy accumulated: %6 Mwh. Total amount of money: %7").arg(
+    QString::number(config_.AgentId_), QDateTime::currentDateTime().toString(), QString::number(order.boughtAmountEnergy_),
+    QString::number(currSystemPrice), QString::number(currAmountEnergy), QString::number(currAmountMoney));
 
-
-  sendMail("nunyah@gmail.com", "Bought energy", msg);
+  this->append(msg, true);
+  sendMail(config_.receiverEmail_, "Transferred over energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail2_, "Transferred over energy - Halvor Spirdal", msg);
 }
 
-void TransactionLogger::appendSellEnergy(unsigned int amount, double unitPrice, double currentFundsTotal, double currentEnergyTotal)
+void TransactionLogger::logTransferSoldEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice)
 {
-  this->append(QString("Sold %1 amount of energy at %2 NOK. Current funds: %3. Current amount of energy: %4").arg(QString::number(amount),
-   QString::number(unitPrice), QString::number(currentFundsTotal), QString::number(currentEnergyTotal)));
+  QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Transferred off % Mwh energy (UnitPrice: %4). OrderID: %5. Total energy accumulated: %6 Mwh. Total amount of money: %7").arg(
+    QString::number(config_.AgentId_), QDateTime::currentDateTime().toString(), QString::number(order.soldAmountEnergy_),
+    QString::number(currSystemPrice), QString::number(currAmountEnergy), QString::number(currAmountMoney));
+
+  this->append(msg, true);
+  sendMail(config_.receiverEmail_, "Transferred away energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail2_, "Transferred away energy - Halvor Spirdal", msg);
 }
+
 
 void TransactionLogger::sendMail(QString email, QString subject, QString message)
 {

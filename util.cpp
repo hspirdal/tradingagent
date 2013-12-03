@@ -13,7 +13,6 @@ Util::Util()
 
 QList<QStringList> Util::loadCSVFile(const QString &filename, QChar separator)
 {
-  qDebug() << "parsing..";
   QFile file(filename);
   QList<QStringList> dataMatrix;
 
@@ -99,7 +98,8 @@ QMap<QDateTime, double> Util::extractSystemPriceDaily(const QList<QStringList> &
 
     QDateTime date = QDateTime::fromString(list.at(0), Constants::DateTimeFormat);
 
-    // Quick way to ignore any header rows. Current year has one more row of headerdata.
+    // Quick way to ignore any header rows. Current year has one more row of headerdata. Any row evaluating this to false
+    // means it isn't a row with actual price data, so we can ignore it.
     if(!date.isValid())
       continue;
 
@@ -115,6 +115,48 @@ QMap<QDateTime, double> Util::extractSystemPriceDaily(const QList<QStringList> &
     prices.insert(date, sys);
   }
   return prices;
+}
+
+/* very specialized method to extract data from a specific XLS sheet online at
+ * http://www.nordpoolspot.com/PageFiles/9383/Elspot%20Prices_2013_Daily_NOK.xls
+ */
+QMap<QDateTime, double> Util::parseXLS_daily(const QString& content)
+{
+  static QString day_start =  "<td style=\"text-align:left;\">";
+  static QString endTd = "</td>";
+  static QString price_html_start = "<td style=\"text-align:right;\">";
+  static QString price_html_preliminary = "<td style=\"color:purple;text-align:right;\">";
+  QMap<QDateTime, double> priceMap;
+
+  // The last few days in the document will be marked with a purple tag if its been weekend. Thus the extra work.
+  // We're basically extracting the dato and the first price instance per line. Current version works great, but
+  // could of course break anytime during the future if the format changes in the file.
+  QStringList lines = content.split('\n');
+  for(QString line : lines)
+  {
+    if(line.contains(day_start))
+    {
+      int indexDateStart = line.indexOf(day_start) + day_start.length();
+      int indexDateEnd = line.indexOf(endTd, indexDateStart);
+      QString datestring = line.mid(indexDateStart, indexDateEnd-indexDateStart);
+      QDateTime date = QDateTime::fromString(datestring, Constants::DateTimeFormat);
+
+      int indexPriceStart = 0;
+      if(line.contains(price_html_preliminary))
+        indexPriceStart = line.indexOf(price_html_preliminary, indexDateEnd) + price_html_preliminary.length();
+      else
+        indexPriceStart = line.indexOf(price_html_start, indexDateEnd) + price_html_start.length();
+
+      int indexPriceEnd = line.indexOf(endTd, indexPriceStart);
+      QString pricestring = line.mid(indexPriceStart, indexPriceEnd-indexPriceStart).replace(',', '.');
+      double price = pricestring.toDouble();
+
+      priceMap.insert(date, price);
+    }
+  }
+
+  if(priceMap.count() <= 0) Logger::get().append("ParseXLSDaily: Expected more than 0 items in the pricelist.", true);
+  return priceMap;
 }
 
 double Util::parseNordpoolSpotpriceNOK(const QString html)
@@ -143,6 +185,18 @@ double Util::parseNordpoolSpotpriceNOK(const QString html)
       Logger::get().append("ParseNordpool: spotprice was not parsed correctly! Pricestring:" + pricestring , true);
 
     return spotprice;
+}
+
+QMap<QDateTime, double> Util::extractPricesWithinDate(const QMap<QDateTime, double>& spotprices, QDateTime from, QDateTime to)
+{
+  QMap<QDateTime, double> spotpriceSelection;
+  for(auto itr = spotprices.begin(); itr != spotprices.end(); ++itr)
+  {
+    if(itr.key() >= from && itr.key() <= to)
+      spotpriceSelection.insert(itr.key(), itr.value());
+  }
+  if(spotpriceSelection.count() <= 0) Logger::get().append("Util.ExtractPricesWithinDate: Price selection is zero.", true);
+  return spotpriceSelection;
 }
 
 bool Util::writeFile(const std::string& filename, const std::string& content, bool overwrite)

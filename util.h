@@ -5,6 +5,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QMap>
+#include <assert.h>
 
 class Util
 {
@@ -14,7 +15,9 @@ public:
   static QMap<QString, QMap<QString, QString> > loadIniFile(const QString& filename);
   static QMap<QDateTime, double> extractSystemPriceDaily(const QList<QStringList>& dataMatrix);
   static QList<QStringList> loadCSVFiles(const QList<QString>& filenames, QChar separator);
+  static QMap<QDateTime, double> parseXLS_daily(const QString& content);
   static double parseNordpoolSpotpriceNOK(const QString html);
+  static QMap<QDateTime, double> extractPricesWithinDate(const QMap<QDateTime, double>& spotprices, QDateTime from, QDateTime to);
   static bool writeFile(const std::string& filename, const std::string& content, bool overwrite = false);
 
   static bool lessEqualAbs(double a, double b, double epsilon = 10e-8)
@@ -26,6 +29,12 @@ public:
   static bool areSame(double a, double b, double epsilon = 10e-8)
   {
     return std::abs(a - b) < epsilon;
+  }
+
+  static double clamp(double value, double min, double max)
+  {
+    assert(max >= min && "Min value higher than max value");
+    return std::min(std::max(value, min), max);
   }
 
 private:

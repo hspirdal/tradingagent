@@ -10,32 +10,26 @@
 struct TrainRow
 {
 public:
-//  TrainRow(std::vector<double> spotPrices, double avg)
-//  {
-//    spotPrices_ = spotPrices;
-//    avgPrice_ = avg;
-//  }
-
-  TrainRow(std::deque<double> priceWindow, double solutionAverage)
+  TrainRow(std::deque<double> inputs, double output)
   {
-    spotPrices_ = priceWindow;
-    avgPrice_ = solutionAverage;
+    inputs_ = inputs;
+    output_ = output;
   }
 
 
   QString toString() const
   {
     QString out("");
-    for(double price : spotPrices_)
-      out.append(QString::number(price) + " ");
+    for(double input : inputs_)
+      out.append(QString::number(input) + " ");
 
-    out.append(QString("\n\n%1\n").arg(QString::number(avgPrice_)));
+    out.append(QString("\n\n%1\n").arg(QString::number(output_)));
     return out;
   }
 
 private:
-  std::deque<double> spotPrices_;
-  double avgPrice_;
+  std::deque<double> inputs_;
+  double output_;
 };
 
 class DataTrainSet
@@ -45,21 +39,10 @@ public:
   :  setName_(setname), numInputPerRow_(numInputValues), numOutputPerRow_(numOutputValues)
   {}
 
-  // It is assumed (and up to client caller) that the vector has values between [0.0, 1.0].
-//  void appendRow(const std::vector<double>& dayPrices)
-//  {
-//    // Expect the input value to match the criterea set on the set.
-//    assert(dayPrices.size() == numInputPerRow_);
-//    // Output is here the average of the input values.
-//    const double avg = std::accumulate(dayPrices.begin(), dayPrices.end(), 0.0) / dayPrices.size();
-//    trainingRows_.append(TrainRow(dayPrices, avg));
-//  }
-
-  void appendRow(const std::deque<double>& priceWindow, const std::deque<double>& aheadPriceWindow)
+  void appendRow(const std::deque<double>& inputs, const double output)
   {
-    assert((priceWindow.size() == aheadPriceWindow.size()) && priceWindow.size() == numInputPerRow_ && "unexpected size difference");
-    const double solutionAverage = std::accumulate(aheadPriceWindow.begin(), aheadPriceWindow.end(), 0.0) / aheadPriceWindow.size();
-    trainingRows_.append(TrainRow(priceWindow, solutionAverage));
+    assert(inputs.size() == numInputPerRow_ && "unexpected size difference");
+    trainingRows_.append(TrainRow(inputs, output));
   }
 
   QString toString() const
