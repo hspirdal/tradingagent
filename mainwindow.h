@@ -27,6 +27,9 @@ public:
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
 
+public slots:
+  void appendWindowLog(const QString& log);
+
 private slots:
   void onReply(QNetworkReply* reply);
   void onTimerUpdate();
@@ -47,6 +50,7 @@ private:
   std::unique_ptr<QNetworkAccessManager> network_;
   std::unique_ptr<QTimer> timer_;
   std::unique_ptr<AgentController> agentController_;
+  bool agentRunning_;
 
 
   void updateAll();

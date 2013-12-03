@@ -8,7 +8,7 @@
 #include "NeuralConfig.h"
 
 MainWindow::MainWindow(QWidget *parent)
-: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), network_(new QNetworkAccessManager(this)), timer_(new QTimer(this))
+: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), network_(new QNetworkAccessManager(this)), timer_(new QTimer(this)), agentRunning_(false)
 {
   ui->setupUi(this);
 
@@ -16,9 +16,9 @@ MainWindow::MainWindow(QWidget *parent)
   assets_ = std::make_shared<AssetsManager>(config_);
   neurnet_ = std::unique_ptr<NeuralNet>(new NeuralNet(config_.get()->neuralConfig()));
 
-  assets_->setMoney(config_.get()->assetsConfig().Money_);
-  assets_->setEnergy(config_.get()->assetsConfig().Energy_);
-  assets_->setRealSystemPrice(config_.get()->assetsConfig().LastSysPrice_);
+  assets_->setMoney(config_->assetsConfig().Money_);
+  assets_->setEnergy(config_->assetsConfig().Energy_);
+  assets_->setRealSystemPrice(config_->assetsConfig().LastSysPrice_);
 
   // TODO: write back config. Fix NN bug of high values.
 
@@ -28,8 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
 
   QObject::connect(network_.get(), SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
   QObject::connect(timer_.get(), SIGNAL(timeout()), this, SLOT(onTimerUpdate()));
-  timer_.get()->start(config_.get()->miscConfig().TimerInterval_);
 
+  //timer_.get()->start(config_.get()->miscConfig().TimerInterval_);
 
   updateAll();
 
@@ -150,12 +150,6 @@ void MainWindow::onTimerUpdate()
 }
 
 
-
-
-
-
-
-
 void MainWindow::on_btnTrainData_clicked()
 {
   QList<QString> files = {"Data/Elspot Prices_2011_Daily_NOK.csv", "Data/Elspot Prices_2012_Daily_NOK.csv", "Data/Elspot Prices_2013_Daily_NOK.csv"};
@@ -165,7 +159,28 @@ void MainWindow::on_btnTrainData_clicked()
 
 }
 
+void MainWindow::appendWindowLog(const QString& log)
+{
+  ui->txtbxOverviewLog->append(QDateTime::currentDateTime().toString() + ": " + log);
+}
+
 void MainWindow::on_btnStartAgent_clicked()
 {
-    network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig().UrlPrices2013Daily_)));
+    agentRunning_ = !agentRunning_;
+    if(agentRunning_)
+    {
+      timer_->start(config_.get()->miscConfig().TimerInterval_);
+      ui->btnStartAgent->setText("Stop Agent");
+      ui->lblStatus->setText("Running");
+      ui->lblStatus->setStyleSheet("QLabel { color : green }");
+      appendWindowLog("Started running the agent");
+    }
+    else
+    {
+      timer_->stop();
+      ui->btnStartAgent->setText("Start Agent");
+      ui->lblStatus->setText("Not Running");
+      ui->lblStatus->setStyleSheet("QLabel { color : red }");
+      appendWindowLog("Stopped running the agent.");
+    }
 }

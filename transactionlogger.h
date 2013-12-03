@@ -29,7 +29,7 @@ private:
 
 
 
-  void sendMail(QString email, QString subject, QString message);
+  void sendMail(QString email, QString subject, QString message, QString secondEmail = "");
 };
 
 #endif // TRANSACTIONLOGGER_H

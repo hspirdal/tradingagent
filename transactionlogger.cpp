@@ -4,7 +4,9 @@ TransactionLogger::TransactionLogger(QString logfile, const AgentInfoConfig& con
   : Logger(logfile), config_(config), sendEmail_(config.SendEmail_), smtp_(new SmtpClient(config.SmtpClient_, config.SmtpPort_, SmtpClient::SslConnection))
 {
 
-  smtp_->setUser(config.SmtpAddr_);
+  auto s = config.ClientEmailAddr_;
+  auto p = config.SmtpPassw_;
+  smtp_->setUser(config.ClientEmailAddr_);
   smtp_->setPassword(config.SmtpPassw_);
 }
 
@@ -42,8 +44,8 @@ void TransactionLogger::logBuyEnergyOrder(Order order)
     QString::number(order.orderNumber_), QString::number(order.boughtAmountEnergy_));
 
   this->append(msg, true);
-  sendMail(config_.receiverEmail_, "Bought energy - Halvor Spirdal", msg);
-  sendMail(config_.receiverEmail2_, "Bought energy - Halvor Spirdal", msg);
+  //sendMail(config_.receiverEmail_, "Bought energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail_, "Bought energy - Halvor Spirdal", msg, config_.receiverEmail2_);
 
 }
 
@@ -54,41 +56,43 @@ void TransactionLogger::logSellEnergyOrder(Order order)
     QString::number(order.orderNumber_), QString::number(order.boughtAmountEnergy_));
 
   this->append(msg, true);
-  sendMail(config_.receiverEmail_, "Selling energy - Halvor Spirdal", msg);
-  sendMail(config_.receiverEmail2_, "Selling energy - Halvor Spirdal", msg);
+  //sendMail(config_.receiverEmail_, "Selling energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail_, "Selling energy - Halvor Spirdal", msg, config_.receiverEmail2_);
 }
 
 void TransactionLogger::logTransferBoughtEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice)
 {
   QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Transferred over %3 Mwh energy (UnitPrice: %4). OrderID: %5. Total energy accumulated: %6 Mwh. Total amount of money: %7").arg(
     QString::number(config_.AgentId_), QDateTime::currentDateTime().toString(), QString::number(order.boughtAmountEnergy_),
-    QString::number(currSystemPrice), QString::number(currAmountEnergy), QString::number(currAmountMoney));
+    QString::number(currSystemPrice), QString::number(order.orderNumber_), QString::number(currAmountEnergy), QString::number(currAmountMoney));
 
   this->append(msg, true);
-  sendMail(config_.receiverEmail_, "Transferred over energy - Halvor Spirdal", msg);
-  sendMail(config_.receiverEmail2_, "Transferred over energy - Halvor Spirdal", msg);
+  //sendMail(config_.receiverEmail_, "Transferred over energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail_, "Transferred over energy - Halvor Spirdal", msg, config_.receiverEmail2_);
 }
 
 void TransactionLogger::logTransferSoldEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice)
 {
   QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Transferred off % Mwh energy (UnitPrice: %4). OrderID: %5. Total energy accumulated: %6 Mwh. Total amount of money: %7").arg(
     QString::number(config_.AgentId_), QDateTime::currentDateTime().toString(), QString::number(order.soldAmountEnergy_),
-    QString::number(currSystemPrice), QString::number(currAmountEnergy), QString::number(currAmountMoney));
+    QString::number(currSystemPrice), QString::number(order.orderNumber_), QString::number(currAmountEnergy), QString::number(currAmountMoney));
 
   this->append(msg, true);
-  sendMail(config_.receiverEmail_, "Transferred away energy - Halvor Spirdal", msg);
-  sendMail(config_.receiverEmail2_, "Transferred away energy - Halvor Spirdal", msg);
+  //sendMail(config_.receiverEmail_, "Transferred away energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail_, "Transferred away energy - Halvor Spirdal", msg, config_.receiverEmail2_);
 }
 
 
-void TransactionLogger::sendMail(QString email, QString subject, QString message)
+void TransactionLogger::sendMail(QString email, QString subject, QString message, QString secondEmail)
 {
   if(!sendEmail_)
     return;
 
   MimeMessage mimeMessage;
-  mimeMessage.setSender(new EmailAddress("john.baugen@gmail.com", "John Baugen"));
+  mimeMessage.setSender(new EmailAddress(config_.ClientEmailAddr_, config_.ClientName_));
   mimeMessage.addRecipient(new EmailAddress(email, ""));
+  if(!secondEmail.isEmpty())
+    mimeMessage.addRecipient(new EmailAddress(secondEmail, ""));
   mimeMessage.setSubject(subject);
   MimeText text;
   text.setText(message);
@@ -97,5 +101,6 @@ void TransactionLogger::sendMail(QString email, QString subject, QString message
   smtp_->login();
   smtp_->sendMail(mimeMessage);
   smtp_->quit();
+
   qDebug() << "sent email.";
 }

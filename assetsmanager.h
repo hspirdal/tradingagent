@@ -21,7 +21,7 @@ public:
   double realSystemPrice() const { return sysPriceReal_; }
   void setMoney(double money);
   void setEnergy(double energy);
-  void setRealSystemPrice(double sysPriceReal) { sysPriceReal_ = sysPriceReal; }
+  void setRealSystemPrice(double sysPriceReal);
   void completeRemainingTransactions();
 
   bool NegativeMoneyFlag() const { return money() < Constants::ApproxZeroDouble; }

@@ -19,8 +19,6 @@ struct AssetsConfig
 
 struct MiscConfig
 {
-  QString DestinationEmail_;
-  Constants::RunMode RunMode_;
   unsigned int TimerInterval_;
   QTime Time_Order_BuySell_;
   QTime Time_Complete_Transaction_;
@@ -29,9 +27,11 @@ struct MiscConfig
 
 struct AgentInfoConfig
 {
-  QString SmtpAddr_;
+  QString ClientEmailAddr_;
+  QString ClientName_;
   QString receiverEmail_;
   QString receiverEmail2_;
+
   QString SmtpPassw_;
   QString SmtpClient_;
   unsigned int SmtpPort_;
@@ -64,6 +64,12 @@ public:
     if(!dataMap_.contains(section)) { Logger::get().append("Config.value: section not found.", true); return Empty_; }
     if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return Empty_; }
     return dataMap_[section][key];
+  }
+  void setValue(const QString& section, const QString& key, double value)
+  {
+    if(!dataMap_.contains(section)) Logger::get().append("Config.setValue: section not found", true);
+    if(!dataMap_[section].contains(key)) Logger::get().append("Config.value: key not found.", true);
+    dataMap_[section][key] = value;
   }
 
   unsigned int nextOrderNumber() { return ++assetsConfig_.OrderNumber_; }
@@ -128,8 +134,6 @@ private:
   void loadMiscConfig()
   {
     const QString Section = "misc";
-    miscConfig_.DestinationEmail_ = value(Section, "dest_email"); assert(!miscConfig_.DestinationEmail_.isEmpty());
-    miscConfig_.RunMode_ = value(Section, "runmode").compare("NotRunning") == 0 ? Constants::NotRunning : Constants::Running;
     miscConfig_.TimerInterval_ = value(Section, "timer_interval").toUInt(); assert(miscConfig_.TimerInterval_ > 0);
     miscConfig_.Time_Order_BuySell_ = QTime::fromString(value(Section, "time_order_buysell"), Constants::TimeFormat);
     miscConfig_.Time_Complete_Transaction_ = QTime::fromString(value(Section, "time_complete_transaction"), Constants::TimeFormat);
@@ -139,7 +143,8 @@ private:
   void loadAgentInfoConfig()
   {
     const QString Section = "agentinfo";
-    agentInfoConfig_.SmtpAddr_ = value(Section, "smtpaddr");
+    agentInfoConfig_.ClientEmailAddr_ = value(Section, "clientEmailAddr");
+    agentInfoConfig_.ClientName_ = value(Section, "clientName");
     agentInfoConfig_.SmtpPassw_ = value(Section, "smtppassw");
     agentInfoConfig_.SmtpClient_ = value(Section, "smtpclient");
     agentInfoConfig_.SmtpPort_ = value(Section, "smtpport").toUInt();

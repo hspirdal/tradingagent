@@ -24,7 +24,6 @@ void AgentController::predictPriceAhead()
     assets_->setupSellEnergy(assets_->energy(), dayAheadprice);
     return;
   }
-  auto mon = assets_->money();
   const double ratio = dayAheadprice / assets_->realSystemPrice();
   if(ratio > 1.0)
   {

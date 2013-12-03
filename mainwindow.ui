@@ -43,13 +43,13 @@
        <string>Start Agent</string>
       </property>
      </widget>
-     <widget class="QTableWidget" name="tblOverview">
+     <widget class="QTextEdit" name="txtbxOverviewLog">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>10</y>
+        <y>20</y>
         <width>561</width>
-        <height>221</height>
+        <height>251</height>
        </rect>
       </property>
      </widget>
