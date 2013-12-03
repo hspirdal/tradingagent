@@ -44,7 +44,7 @@ bool AssetsManager::rule_moneyHighEnergyLow()
   double percentMoneyLeft = money() / StartingMoney;
   double percentEnergyLeft = energy() / StartingEnergy;
   double ratio = percentMoneyLeft / percentEnergyLeft;
-  return ratio > 0.25;
+  return ratio < 0.25;
 }
 
 bool AssetsManager::rule_moneyLowEnergyHigh()
@@ -52,7 +52,7 @@ bool AssetsManager::rule_moneyLowEnergyHigh()
   double percentMoneyLeft = money() / StartingMoney;
   double percentEnergyLeft = energy() / StartingEnergy;
   double ratio = percentEnergyLeft / percentMoneyLeft;
-  return ratio > 0.25;
+  return ratio < 0.25;
 }
 
 void AssetsManager::completeRemainingTransactions()

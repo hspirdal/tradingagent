@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
   assets_->setEnergy(config_.get()->assetsConfig().Energy_);
   assets_->setRealSystemPrice(config_.get()->assetsConfig().LastSysPrice_);
 
-
+  // TODO: write back config. Fix NN bug of high values.
 
 
   agentController_ = std::unique_ptr<AgentController>(new AgentController(config_, neurnet_, assets_));
@@ -131,8 +131,10 @@ void MainWindow::onTimerUpdate()
   // This is to ensure that everything happens in order, because we cannot trust an internet connection.
   if(!agentController_->hasPredictedAndMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
   {
-    fetchLatestSpotPrice();
-    fetchFreshPrices();
+    if(!agentController_->isFreshSystemPrice())
+      fetchLatestSpotPrice();
+    if(!agentController_->isFreshPriceData())
+      fetchFreshPrices();
 
     // If preliminary stuff is done, start the process of predicting.
     if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData())

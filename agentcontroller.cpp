@@ -20,10 +20,11 @@ void AgentController::predictPriceAhead()
   // Check and handle disaster.
   if(assets_->NegativeMoneyFlag())
   {
+    logger_->append("AgentController.PredictPriceAhead: NegativeMoneyFlag encountered!", true);
     assets_->setupSellEnergy(assets_->energy(), dayAheadprice);
     return;
   }
-
+  auto mon = assets_->money();
   const double ratio = dayAheadprice / assets_->realSystemPrice();
   if(ratio > 1.0)
   {
@@ -84,7 +85,7 @@ void AgentController::setLatestDailyPrices(const QMap<QDateTime, double>& latest
 
 void AgentController::resetFlags()
 {
-  currentDate() = QDateTime::currentDateTime();
+  currentTime_ = QDateTime::currentDateTime();
   isFreshPriceData_ = false;
   isFreshSystemPrice_ = false;
   hasPredictedAndMadeOrder_ = false;
