@@ -33,15 +33,11 @@ public slots:
 private slots:
   void onReply(QNetworkReply* reply);
   void onTimerUpdate();
-
-  void on_btnPredict_clicked();
   void on_btnTrainData_clicked();
-
   void on_btnStartAgent_clicked();
 
 private:
   Ui::MainWindow *ui;
-  const unsigned int NumDaysAhead_;
   QMap<QString, QFile*> rawDataFiles_;
   unsigned int NextId_;
   std::shared_ptr<AssetsManager> assets_;

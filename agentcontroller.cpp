@@ -11,9 +11,19 @@ AgentController::AgentController(std::shared_ptr<Config> config, std::shared_ptr
 
 void AgentController::predictPriceAhead()
 {
-  double futureavg = neurnet_->estimateAveragePriceNextPeriod(this->latestDailyPrices_);
+  const double futureavg = neurnet_->estimateAveragePriceNextPeriod(this->latestDailyPrices_);
+  const double curravg = std::accumulate(latestDailyPrices_.begin(), latestDailyPrices_.end(), 0.0) / latestDailyPrices_.size();
+  const double increaseRatioLongTerm = futureavg / curravg;
+  if(increaseRatioLongTerm > 1.0)
+  {
+    // do something smart here.
+    qDebug() << "avg should rise";
+  }
+  else { qDebug() << "avg should sink"; }
+
   double dayAheadprice = neurnet_->estimateDayAheadPrice(this->latestDailyPrices_);
   qDebug() << "future avg: " << futureavg;
+  qDebug() << "current avg: " << curravg;
   qDebug() << "dayahead:" << dayAheadprice;
   hasPredictedAndMadeOrder_ = true;
 
@@ -32,7 +42,8 @@ void AgentController::predictPriceAhead()
       return;
 
     // Depending on scale and probability, this could be a good time to buy.
-    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, 0.25); // never buy more than 25% of total money assets.
+    // never buy more than [max] of total money assets.
+    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, config_->agentInfoConfig().MaxMoneySpend_);
     const double moneyToSpend = assets_->money() * percent;
     const double unitsToBuy = moneyToSpend / assets_->realSystemPrice();
     assets_->setupBuyEnergyOrder(unitsToBuy, dayAheadprice);
@@ -44,7 +55,8 @@ void AgentController::predictPriceAhead()
       return;
 
     // like above, it can be profitable to sell if the change is big enough.
-    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, 0.25); // never buy more than 25% of total money assets.
+    // never sell more than [max] of total money assets.
+    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, config_->agentInfoConfig().MaxEnergySell_);
     const double energyToSell = assets_->energy() * percent;
     assets_->setupSellEnergy(energyToSell, dayAheadprice);
   }

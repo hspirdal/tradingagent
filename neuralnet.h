@@ -2,8 +2,11 @@
 #define NEURALNET_H
 
 #include "floatfann.h"
-//#include "doublefann.h"
-#include "fann_cpp.h"
+//#include <doublefann.h>
+//#include "3rdparty/FANN/floatfann.h"
+//#include "3rdparty/FANN/doublefann.h"
+#include <fann_cpp.h>
+//#include "3rdparty/FANN/fann_cpp.h"
 #include <QString>
 #include <QMap>
 #include <QList>

@@ -8,6 +8,7 @@
 #include <constants.h>
 #include <QTime>
 #include <assert.h>
+#include "util.h"
 
 struct AssetsConfig
 {
@@ -20,7 +21,6 @@ struct AssetsConfig
 struct MiscConfig
 {
   unsigned int TimerInterval_;
-  QTime Time_Order_BuySell_;
   QTime Time_Complete_Transaction_;
   QTime Time_Predict_Price_;
 };
@@ -38,6 +38,9 @@ struct AgentInfoConfig
   QString SmtpCon_;
   unsigned int AgentId_;
   bool SendEmail_;
+  double MaxMoneySpend_;
+  double MaxEnergySell_;
+
 };
 
 struct ParseConfig
@@ -52,11 +55,21 @@ class Config
 public:
   Config(QMap<QString, QMap<QString, QString> > configmap) : dataMap_(configmap), Empty_(), neuralConfig_()
   {
+    reloadConfigs();
+  }
+
+  void reloadConfigs()
+  {
     loadNeuralConfig();
     loadAssetsConfig();
     loadMiscConfig();
     loadAgentInfoConfig();
     loadParseConfig();
+  }
+
+  void save()
+  {
+    Util::writeFile("config.ini", this->toString().toStdString(), true);
   }
 
   QString value(const QString& section, const QString& key)
@@ -67,12 +80,26 @@ public:
   }
   void setValue(const QString& section, const QString& key, double value)
   {
-    if(!dataMap_.contains(section)) Logger::get().append("Config.setValue: section not found", true);
-    if(!dataMap_[section].contains(key)) Logger::get().append("Config.value: key not found.", true);
-    dataMap_[section][key] = value;
+    if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return; }
+    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return; }
+    dataMap_[section][key] = QString::number(value);
+
+    // It's suboptimal, but currently it's just a fix expanding on a little shortsighted future set that was assumed to have values that
+    // does not change during runtime. If a value changes at runtime, we need to update it 'locally' as well.
+    // the local struct containers are just convenience storage for the same data (in string value) in the mapper.
+    // I could only reload the value that changed, but its a small file; it's easier currently to just reload all of it.
+    reloadConfigs();
+    save();
   }
 
-  unsigned int nextOrderNumber() { return ++assetsConfig_.OrderNumber_; }
+  void setValue(const QString& section, const QString& key, unsigned int value)
+  {
+    if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return; }
+    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return; }
+    dataMap_[section][key] = QString::number(value);
+    reloadConfigs();
+    save();
+  }
 
   const NeuralConfig& neuralConfig() const { return neuralConfig_; }
   const AssetsConfig& assetsConfig() const { return assetsConfig_; }
@@ -135,7 +162,6 @@ private:
   {
     const QString Section = "misc";
     miscConfig_.TimerInterval_ = value(Section, "timer_interval").toUInt(); assert(miscConfig_.TimerInterval_ > 0);
-    miscConfig_.Time_Order_BuySell_ = QTime::fromString(value(Section, "time_order_buysell"), Constants::TimeFormat);
     miscConfig_.Time_Complete_Transaction_ = QTime::fromString(value(Section, "time_complete_transaction"), Constants::TimeFormat);
     miscConfig_.Time_Predict_Price_ = QTime::fromString(value(Section, "time_predict_price"), Constants::TimeFormat);
   }
@@ -153,6 +179,8 @@ private:
     agentInfoConfig_.SendEmail_ = value(Section, "sendEmail").toUInt() > 0;
     agentInfoConfig_.receiverEmail_ = value(Section, "receiverEmail");
     agentInfoConfig_.receiverEmail2_ = value(Section, "receiverEmail2");
+    agentInfoConfig_.MaxMoneySpend_ = value(Section, "maxMoneySpend").toDouble();
+    agentInfoConfig_.MaxEnergySell_ = value(Section, "maxEnergySell").toDouble();
   }
 
   void loadParseConfig()

@@ -41,12 +41,15 @@ private:
 
   const double StartingMoney = 1000000.0;
   const double StartingEnergy = 500;
+  const QString SectionName = "assets";
 
   // Temp methods that should later hold more rigorous checking typical for any transaction apps.
   void withdrawFunds(double amount) { money_ -= amount; }
   void withdrawEnergy(double amount) { energy_ -= amount; }
   void appendFunds(double amount) { money_ += amount; }
   void appendEnergy(double amount) { energy_ += amount; }
+
+  unsigned int nextOrderNumber();
 };
 
 #endif // ASSETSMANAGER_H

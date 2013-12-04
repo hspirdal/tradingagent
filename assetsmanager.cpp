@@ -8,9 +8,16 @@ AssetsManager::AssetsManager(std::shared_ptr<Config> config)
 {
 }
 
+unsigned int AssetsManager::nextOrderNumber()
+{
+  unsigned int next = config_->assetsConfig().OrderNumber_ + 1;
+  config_->setValue(SectionName, "currentOrderNumber", next);
+  return next;
+}
+
 bool AssetsManager::setupBuyEnergyOrder(double amount, double predictedPrice)
 {
-  Order order(amount, 0.0, predictedPrice, sysPriceReal_,  config_->nextOrderNumber());
+  Order order(amount, 0.0, predictedPrice, sysPriceReal_,  nextOrderNumber());
   remainingOrders_.push(order);
   log_->logBuyEnergyOrder(order);
 
@@ -22,7 +29,7 @@ bool AssetsManager::setupSellEnergy(double amount, double predictedPrice)
   // The system might allow for the agent to get negative money because number of assets will be bought the next day no matter how the price changes.
   // The rules allow for this, but it might be unfortunate as the rules dicate that we would have to sell all energy on the following turn or lose.
 
-  Order order(0.0, amount, predictedPrice, sysPriceReal_, config_->nextOrderNumber());
+  Order order(0.0, amount, predictedPrice, sysPriceReal_, nextOrderNumber());
   remainingOrders_.push((order));
   log_->logSellEnergyOrder(order);
 
@@ -32,23 +39,20 @@ bool AssetsManager::setupSellEnergy(double amount, double predictedPrice)
 void AssetsManager::setRealSystemPrice(double sysPriceReal)
 {
   sysPriceReal_ = sysPriceReal;
-  config_->setValue("Assets", "lastSysPrice", sysPriceReal_);
-  Util::writeFile("config.ini", config_->toString().toStdString(), true);
+  config_->setValue(SectionName, "lastSysPrice", sysPriceReal_);
 }
 
 void AssetsManager::setMoney(double money)
 {
   money_ = money;
-  config_->setValue("Assets", "money" , money_);
-  Util::writeFile("config.ini", config_->toString().toStdString(), true);
+  config_->setValue(SectionName, "money" , money_);
   qDebug() << "money:" << config_->value("assets", "money");
 }
 
 void AssetsManager::setEnergy(double energy)
 {
   energy_ = energy;
-  config_->setValue("Assets", "energy" , energy_);
-  Util::writeFile("config.ini", config_->toString().toStdString(), true);
+  config_->setValue(SectionName, "energy" , energy_);
 }
 
 bool AssetsManager::rule_moneyHighEnergyLow()
@@ -90,10 +94,9 @@ void AssetsManager::completeRemainingTransactions()
       log_->logTransferSoldEnergy(order, energy(), money(), sysPriceReal_);
     }
     remainingOrders_.pop();
-    config_->setValue("Assets", "money" , money_);
-    config_->setValue("Assets", "energy" , energy_);
-    config_->setValue("Assets", "lastSysPrice" , sysPriceReal_);
-    Util::writeFile("config.ini", config_->toString().toStdString(), true);
+    config_->setValue(SectionName, "money" , money_);
+    config_->setValue(SectionName, "energy" , energy_);
+    config_->setValue(SectionName, "lastSysPrice" , sysPriceReal_);
   }
 }
 

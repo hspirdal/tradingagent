@@ -11,8 +11,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = TradingAgent
 TEMPLATE = app
 
-LIBS += "/home/arch/Projects/Master/AI/BUILD/TradingAgent/3rdparty/libSMTPEmail.a"
-LIBS += "/usr/lib/libfann.so"
+LIBS += "3rdparty/libSMTPEmail.a"
+LIBS += "3rdparty/libfann.so"
+#LIBS += "/usr/lib/libfann.so"
 #LIBS += -L"$$_PRO_FILE_PWD_/3rdparty/" -llibSMTPEmail
 #LIBS += libSMTPEmail
 

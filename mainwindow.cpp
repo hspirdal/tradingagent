@@ -8,7 +8,7 @@
 #include "NeuralConfig.h"
 
 MainWindow::MainWindow(QWidget *parent)
-: QMainWindow(parent), ui(new Ui::MainWindow), NumDaysAhead_(1), network_(new QNetworkAccessManager(this)), timer_(new QTimer(this)), agentRunning_(false)
+: QMainWindow(parent), ui(new Ui::MainWindow), network_(new QNetworkAccessManager(this)), timer_(new QTimer(this)), agentRunning_(false)
 {
   ui->setupUi(this);
 
@@ -19,21 +19,13 @@ MainWindow::MainWindow(QWidget *parent)
   assets_->setMoney(config_->assetsConfig().Money_);
   assets_->setEnergy(config_->assetsConfig().Energy_);
   assets_->setRealSystemPrice(config_->assetsConfig().LastSysPrice_);
-
-  // TODO: write back config. Fix NN bug of high values.
-
-
   agentController_ = std::unique_ptr<AgentController>(new AgentController(config_, neurnet_, assets_));
 
 
   QObject::connect(network_.get(), SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
   QObject::connect(timer_.get(), SIGNAL(timeout()), this, SLOT(onTimerUpdate()));
 
-  //timer_.get()->start(config_.get()->miscConfig().TimerInterval_);
-
   updateAll();
-
-
 }
 
 MainWindow::~MainWindow()
@@ -57,8 +49,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::updateAll()
 {
-  ui->lblCurrMoney->setText(QString::number(assets_->money()));
-  ui->lblCurrEnergy->setText(QString::number(assets_->energy()));
+  ui->lblCurrMoney->setText(QString::number(assets_->money(), 'G', 8));
+  ui->lblCurrEnergy->setText(QString::number(assets_->energy(), 'G', 8));
 
   QString filenames = "Elspot Prices_2011_Daily_NOK.csv\nElspot Prices_2012_Daily_NOK.csv\nElspot Prices_2013_Daily_NOK.csv\n";
   ui->lblDatasetFile->setText(filenames);
@@ -76,21 +68,6 @@ void MainWindow::fetchFreshPrices()
   network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig().UrlPrices2013Daily_)));
 }
 
-//void MainWindow::on_btnBuyAmount_clicked()
-//{
-//  //assets_->buyEnergy(ui->txtBuyAmount->text().toDouble());
-//  updateAll();
-//}
-
-void MainWindow::on_btnPredict_clicked()
-{
-//  QList<QStringList> dataMatrix = Util::loadCSVFile("Data/Elspot Prices_2013_Daily_NOK.csv", ',');
-//  auto prices = Util::extractSystemPriceDaily(dataMatrix);
-
-//  QDateTime fromdate;
-//  fromdate.setDate(QDate(2013, 10 , 1));
-//  neurnet_->estimateNextPeriod(prices, fromdate, config_.get()->neuralConfig().DayAheadLong_, NumDaysAhead_);
-}
 
 void MainWindow::onReply(QNetworkReply *reply)
 {
@@ -154,6 +131,7 @@ void MainWindow::on_btnTrainData_clicked()
 {
   QList<QString> files = {"Data/Elspot Prices_2011_Daily_NOK.csv", "Data/Elspot Prices_2012_Daily_NOK.csv", "Data/Elspot Prices_2013_Daily_NOK.csv"};
   QList<QStringList> dataMatrix = Util::loadCSVFiles(files, ',');
+  //QList<QStringList> dataMatrix = Util::loadCSVFile("Data/Elspot Prices_2013_Daily_NOK.csv", ',');
   auto prices = Util::extractSystemPriceDaily(dataMatrix);
   agentController_.get()->createAndTrainSet("2011_2013_daily_NOK", prices);
 
