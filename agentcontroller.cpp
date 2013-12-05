@@ -2,7 +2,7 @@
 
 
 AgentController::AgentController(std::shared_ptr<Config> config, std::shared_ptr<NeuralNet> neurnet, std::shared_ptr<AssetsManager> assets)
-: agentInfoConfig_(config.get()->agentInfoConfig()), config_(config), logger_(new Logger("log.log")), neurnet_(neurnet), assets_(assets)
+: config_(config), logger_(new Logger("log.log")), neurnet_(neurnet), assets_(assets)
 {
   resetFlags();
   // track days gone past, and use it to become more aggressive after a while.
@@ -25,7 +25,7 @@ void AgentController::predictPriceAhead()
   qDebug() << "future avg: " << futureavg;
   qDebug() << "current avg: " << curravg;
   qDebug() << "dayahead:" << dayAheadprice;
-  hasPredictedAndMadeOrder_ = true;
+  setHasMadeOrder(true);
 
   // Check and handle disaster.
   if(assets_->NegativeMoneyFlag())
@@ -99,9 +99,10 @@ void AgentController::resetFlags()
   currentTime_ = QDateTime::currentDateTime();
   isFreshPriceData_ = false;
   isFreshSystemPrice_ = false;
-  hasPredictedAndMadeOrder_ = false;
-  hasUpdatedAssetReserves_ = false;
-  agentSleepingUntilNextDay_ = false;
+  setHasMadeOrder(false);
+  setHasCompletedTransaction(false);
+  setSleeping(false);
+  setCurrentDay(static_cast<unsigned int>(currentTime_.date().day()));
 
   latestDailyPrices_.clear();
 }
@@ -109,8 +110,8 @@ void AgentController::resetFlags()
 void AgentController::completeRemainingTransactions()
 {
   // TODO curr date
-  hasUpdatedAssetReserves_ = true;
-  agentSleepingUntilNextDay_ = true;
+  setHasCompletedTransaction(true);
+  setSleeping(true);
   assets_->completeRemainingTransactions();
 }
 

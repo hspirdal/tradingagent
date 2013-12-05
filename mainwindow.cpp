@@ -26,6 +26,9 @@ MainWindow::MainWindow(QWidget *parent)
   QObject::connect(timer_.get(), SIGNAL(timeout()), this, SLOT(onTimerUpdate()));
 
   updateAll();
+
+  // TODO:
+  // config flag noting if agent has done its work today or not. Perhaps just log the flags true or false.
 }
 
 MainWindow::~MainWindow()
@@ -106,8 +109,9 @@ void MainWindow::onTimerUpdate()
   QDateTime now = QDateTime::currentDateTime();
   // Once the window for any of these opens, there's a number of flags that needs to be set to true, before we can go to the next step.
   // This is to ensure that everything happens in order, because we cannot trust an internet connection.
-  if(!agentController_->hasPredictedAndMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
+  if(!agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
   {
+    bool f = agentController_->hasMadeOrder();
     if(!agentController_->isFreshSystemPrice())
       fetchLatestSpotPrice();
     if(!agentController_->isFreshPriceData())
@@ -119,8 +123,9 @@ void MainWindow::onTimerUpdate()
 
 
   }
-  else if(agentController_->hasPredictedAndMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Complete_Transaction_.hour())
+  else if(agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Complete_Transaction_.hour())
   {
+    bool f = agentController_->hasMadeOrder();
     // The time should be well past the updated daily price by now. It is time to complete the "frozen" transaction.
     agentController_->completeRemainingTransactions();
   }

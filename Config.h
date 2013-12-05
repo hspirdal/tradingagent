@@ -40,6 +40,10 @@ struct AgentInfoConfig
   bool SendEmail_;
   double MaxMoneySpend_;
   double MaxEnergySell_;
+  unsigned int CurrentDay_;
+  bool HasMadeOrder_;
+  bool HasCompletedTransaction_;
+  bool IsAgentSleeping_;
 
 };
 
@@ -75,13 +79,13 @@ public:
   QString value(const QString& section, const QString& key)
   {
     if(!dataMap_.contains(section)) { Logger::get().append("Config.value: section not found.", true); return Empty_; }
-    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return Empty_; }
+    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found: " + key , true); return Empty_; }
     return dataMap_[section][key];
   }
   void setValue(const QString& section, const QString& key, double value)
   {
     if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return; }
-    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return; }
+    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found: " + key, true); return; }
     dataMap_[section][key] = QString::number(value);
 
     // It's suboptimal, but currently it's just a fix expanding on a little shortsighted future set that was assumed to have values that
@@ -181,6 +185,10 @@ private:
     agentInfoConfig_.receiverEmail2_ = value(Section, "receiverEmail2");
     agentInfoConfig_.MaxMoneySpend_ = value(Section, "maxMoneySpend").toDouble();
     agentInfoConfig_.MaxEnergySell_ = value(Section, "maxEnergySell").toDouble();
+    agentInfoConfig_.CurrentDay_ = value(Section, "currentDay").toUInt();
+    agentInfoConfig_.HasMadeOrder_ = value(Section, "hasMadeOrder").toUInt() > 0 ? true : false;
+    agentInfoConfig_.HasCompletedTransaction_ = value(Section, "hasCompletedTransaction").toUInt() > 0 ? true : false;
+    agentInfoConfig_.IsAgentSleeping_ = value(Section, "isAgentSleeping").toUInt() > 0 ? true : false;
   }
 
   void loadParseConfig()

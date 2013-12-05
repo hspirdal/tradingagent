@@ -21,9 +21,16 @@ public:
     QDateTime currentDate() const { return currentTime_; }
     bool isFreshSystemPrice() const { return isFreshSystemPrice_; }
     bool isFreshPriceData() const { return isFreshPriceData_; }
-    bool hasPredictedAndMadeOrder() const { return hasPredictedAndMadeOrder_; }
-    bool hasUpdatedAssetReserves() const { return hasUpdatedAssetReserves_; }
-    bool agentSleepingUntilNextDay() const { return agentSleepingUntilNextDay_; }
+    bool currentDay() const { return config_->agentInfoConfig().CurrentDay_; }
+    bool hasMadeOrder() const
+    {
+      bool f = config_->agentInfoConfig().HasMadeOrder_;
+      return config_->agentInfoConfig().HasMadeOrder_; }
+    bool hasCompletedTransaction() const { return config_->agentInfoConfig().HasCompletedTransaction_; }
+    bool agentSleepingUntilNextDay() const
+    {
+      return config_->agentInfoConfig().IsAgentSleeping_;
+    }
 
     bool tryToWake();
     void completeRemainingTransactions();
@@ -35,27 +42,31 @@ public:
         isFreshSystemPrice_ = true;
     }
 
+
   private:
-    AgentInfoConfig agentInfoConfig_;
     std::shared_ptr<Config> config_;
     std::shared_ptr<Logger> logger_;
     std::shared_ptr<NeuralNet> neurnet_;
     std::shared_ptr<AssetsManager> assets_;
     std::vector<double>latestDailyPrices_;
     QDateTime currentTime_;
-    bool agentSleepingUntilNextDay_;
+    //bool agentSleepingUntilNextDay_;
 
     double predictDayAheadPrice();
 
     /* logic */
     bool isFreshSystemPrice_;
     bool isFreshPriceData_;
-    bool hasPredictedAndMadeOrder_;
-    bool hasUpdatedAssetReserves_;
+//    bool hasPredictedAndMadeOrder_;
+//    bool hasUpdatedAssetReserves_;
     QDateTime dateStarted_;
 
 
     void resetFlags();
+    void setHasMadeOrder(bool hasMadeOrder) { config_->setValue("agentinfo", "hasMadeOrder", static_cast<unsigned int>(hasMadeOrder ? 1:0)); }
+    void setHasCompletedTransaction(bool hasCompletedTransaction) { config_->setValue("agentinfo", "hasCompletedTransaction", static_cast<unsigned int>(hasCompletedTransaction ? 1:0)); }
+    void setSleeping(bool sleeping) { config_->setValue("agentinfo", "isAgentSleeping", static_cast<unsigned int>(sleeping ? 1:0)); }
+    void setCurrentDay(unsigned int day) { config_->setValue("agentinfo", "currentDay", day); }
 
 
 };
