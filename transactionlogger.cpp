@@ -44,8 +44,8 @@ void TransactionLogger::logBuyEnergyOrder(Order order)
     QString::number(order.orderNumber_), QString::number(order.boughtAmountEnergy_));
 
   this->append(msg, true);
-  //sendMail(config_.receiverEmail_, "Bought energy - Halvor Spirdal", msg);
-  sendMail(config_.receiverEmail_, "Bought energy - Halvor Spirdal", msg, config_.receiverEmail2_);
+  //sendMail(config_.receiverEmail_, "Order: Buy Energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail_, "Order: Buy Energy - Halvor Spirdal", msg, config_.receiverEmail2_);
 
 }
 
@@ -53,11 +53,11 @@ void TransactionLogger::logSellEnergyOrder(Order order)
 {
   QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Target prediction date: %3. Estimated Price: %4. OrderID: %5. Selling of %6 Mwh").arg(
     QString::number(config_.AgentId_), order.dateTime_.toString(), order.targetPredictionDate().toString(), QString::number(order.predictedUnitPrice_),
-    QString::number(order.orderNumber_), QString::number(order.boughtAmountEnergy_));
+    QString::number(order.orderNumber_), QString::number(order.soldAmountEnergy_));
 
   this->append(msg, true);
-  //sendMail(config_.receiverEmail_, "Selling energy - Halvor Spirdal", msg);
-  sendMail(config_.receiverEmail_, "Selling energy - Halvor Spirdal", msg, config_.receiverEmail2_);
+  //sendMail(config_.receiverEmail_, "Order: Sell Energy - Halvor Spirdal", msg);
+  sendMail(config_.receiverEmail_, "Order: Sell Energy - Halvor Spirdal", msg, config_.receiverEmail2_);
 }
 
 void TransactionLogger::logTransferBoughtEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice)
@@ -73,7 +73,7 @@ void TransactionLogger::logTransferBoughtEnergy(Order order, double currAmountEn
 
 void TransactionLogger::logTransferSoldEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice)
 {
-  QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Transferred off % Mwh energy (UnitPrice: %4). OrderID: %5. Total energy accumulated: %6 Mwh. Total amount of money: %7").arg(
+  QString msg = QString("AgentID: %1, Halvor Spirdal. Time of record: %2. Transferred off %3 Mwh energy (UnitPrice: %4). OrderID: %5. Total energy accumulated: %6 Mwh. Total amount of money: %7").arg(
     QString::number(config_.AgentId_), QDateTime::currentDateTime().toString(), QString::number(order.soldAmountEnergy_),
     QString::number(currSystemPrice), QString::number(order.orderNumber_), QString::number(currAmountEnergy), QString::number(currAmountMoney));
 

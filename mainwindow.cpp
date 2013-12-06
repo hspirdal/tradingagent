@@ -71,6 +71,18 @@ void MainWindow::fetchFreshPrices()
   network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig().UrlPrices2013Daily_)));
 }
 
+void MainWindow::fetchFreshPricesFromDisk()
+{
+
+  //QString content = Util::readFile("Data/Elspot Prices_2013_Daily_NOK.xls");
+  //auto a = Util::parseXLS_daily(content);
+  auto raw = Util::loadCSVFile("Data/Elspot Prices_2013_Daily_NOK.csv", ',');
+  auto a = Util::extractSystemPriceDaily(raw);
+  agentController_.get()->setLatestDailyPrices(a);
+  Logger::get().append("fetched fresh prices from disk", true);
+}
+
+
 
 void MainWindow::onReply(QNetworkReply *reply)
 {
@@ -100,6 +112,8 @@ void MainWindow::onReply(QNetworkReply *reply)
 
 void MainWindow::onTimerUpdate()
 {
+  //updateAll();
+
   // If agent has performed its duties for the day, it will go to sleep, halting any further operation.
   // We keep polling him until it is a new calendarday. The agent should 'wake up' by then and clear previous flags.
   if(agentController_->agentSleepingUntilNextDay())
@@ -111,11 +125,10 @@ void MainWindow::onTimerUpdate()
   // This is to ensure that everything happens in order, because we cannot trust an internet connection.
   if(!agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
   {
-    bool f = agentController_->hasMadeOrder();
     if(!agentController_->isFreshSystemPrice())
       fetchLatestSpotPrice();
     if(!agentController_->isFreshPriceData())
-      fetchFreshPrices();
+      fetchFreshPricesFromDisk();
 
     // If preliminary stuff is done, start the process of predicting.
     if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData())
@@ -125,7 +138,6 @@ void MainWindow::onTimerUpdate()
   }
   else if(agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Complete_Transaction_.hour())
   {
-    bool f = agentController_->hasMadeOrder();
     // The time should be well past the updated daily price by now. It is time to complete the "frozen" transaction.
     agentController_->completeRemainingTransactions();
   }

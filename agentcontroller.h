@@ -22,10 +22,7 @@ public:
     bool isFreshSystemPrice() const { return isFreshSystemPrice_; }
     bool isFreshPriceData() const { return isFreshPriceData_; }
     bool currentDay() const { return config_->agentInfoConfig().CurrentDay_; }
-    bool hasMadeOrder() const
-    {
-      bool f = config_->agentInfoConfig().HasMadeOrder_;
-      return config_->agentInfoConfig().HasMadeOrder_; }
+    bool hasMadeOrder() const { return config_->agentInfoConfig().HasMadeOrder_; }
     bool hasCompletedTransaction() const { return config_->agentInfoConfig().HasCompletedTransaction_; }
     bool agentSleepingUntilNextDay() const
     {
@@ -50,15 +47,12 @@ public:
     std::shared_ptr<AssetsManager> assets_;
     std::vector<double>latestDailyPrices_;
     QDateTime currentTime_;
-    //bool agentSleepingUntilNextDay_;
 
     double predictDayAheadPrice();
 
     /* logic */
     bool isFreshSystemPrice_;
     bool isFreshPriceData_;
-//    bool hasPredictedAndMadeOrder_;
-//    bool hasUpdatedAssetReserves_;
     QDateTime dateStarted_;
 
 

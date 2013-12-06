@@ -19,6 +19,7 @@ public:
   static double parseNordpoolSpotpriceNOK(const QString html);
   static QMap<QDateTime, double> extractPricesWithinDate(const QMap<QDateTime, double>& spotprices, QDateTime from, QDateTime to);
   static bool writeFile(const std::string& filename, const std::string& content, bool overwrite = false);
+  static QString readFile(const QString filename);
 
   static bool lessEqualAbs(double a, double b, double epsilon = 10e-8)
   {

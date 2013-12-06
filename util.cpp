@@ -213,4 +213,18 @@ bool Util::writeFile(const std::string& filename, const std::string& content, bo
   return true;
 }
 
+QString Util::readFile(const QString filename)
+{
+  QString content = "";
+  QFile file(filename);
+  if(file.open(QFile::ReadOnly))
+  {
+    QTextStream in(&file);
+    in.setCodec("UTF-8");
+    while(!in.atEnd())
+      content.append(in.readLine());
+  }
+  return content;
+}
+
 

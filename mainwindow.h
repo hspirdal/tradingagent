@@ -52,6 +52,7 @@ private:
   void updateAll();
   void fetchLatestSpotPrice();
   void fetchFreshPrices();
+  void fetchFreshPricesFromDisk();
 
 };
 

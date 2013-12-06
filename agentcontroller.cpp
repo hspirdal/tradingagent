@@ -25,7 +25,10 @@ void AgentController::predictPriceAhead()
   qDebug() << "future avg: " << futureavg;
   qDebug() << "current avg: " << curravg;
   qDebug() << "dayahead:" << dayAheadprice;
+  dayAheadprice = dayAheadprice - (dayAheadprice - futureavg) / 2.0;
+  qDebug() << "medianshortlongterm: " << dayAheadprice;
   setHasMadeOrder(true);
+  Logger::get().append("Sat order", true);
 
   // Check and handle disaster.
   if(assets_->NegativeMoneyFlag())
@@ -35,7 +38,8 @@ void AgentController::predictPriceAhead()
     return;
   }
   const double ratio = dayAheadprice / assets_->realSystemPrice();
-  if(ratio > 1.0)
+  // Buy energy only is expected price is less than system
+  if(ratio < 1.0)
   {
     // Do not buy if cash reserves are low, if energy amount is still fairly high.
     if(assets_->rule_moneyLowEnergyHigh())
@@ -50,8 +54,8 @@ void AgentController::predictPriceAhead()
   }
   else
   {
-    // Don't sell off too much energy, unless it's getting further out in the competition.
-    if(assets_->rule_moneyHighEnergyLow() || currentDate().date().day() < 15)
+    // Don't sell off too much energy
+    if(assets_->rule_moneyHighEnergyLow())
       return;
 
     // like above, it can be profitable to sell if the change is big enough.
