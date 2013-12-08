@@ -48,7 +48,6 @@ private:
   std::unique_ptr<AgentController> agentController_;
   bool agentRunning_;
 
-
   void updateAll();
   void fetchLatestSpotPrice();
   void fetchFreshPrices();

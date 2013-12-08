@@ -164,7 +164,7 @@ void MainWindow::on_btnTrainData_clicked()
 
 void MainWindow::appendWindowLog(const QString& log)
 {
-  ui->txtbxOverviewLog->append(QDateTime::currentDateTime().toString() + ": " + log);
+  ui->txtbxOverviewLog->append(log);
 }
 
 void MainWindow::on_btnStartAgent_clicked()

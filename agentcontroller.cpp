@@ -13,7 +13,13 @@ AgentController::AgentController(std::shared_ptr<Config> config, std::shared_ptr
 }
 
 void AgentController::predictPriceAhead()
-{
+{ 
+  if(hasMadeOrder())
+  {
+    Logger::get().append("AgentController.PredictPriceAhead: Already predicted this day. Should only happen once per day.");
+    return;
+  }
+
   const double futureavg = neurnet_->estimateAveragePriceNextPeriod(this->latestDailyPrices_);
   const double curravg = std::accumulate(latestDailyPrices_.begin(), latestDailyPrices_.end(), 0.0) / latestDailyPrices_.size();
   const double increaseRatioLongTerm = futureavg / curravg;
@@ -126,8 +132,13 @@ void AgentController::resetFlags()
 
 void AgentController::completeRemainingTransactions()
 {
-  setHasCompletedTransaction(true);
-  assets_->completeRemainingTransactions();
+  if(!hasCompletedTransaction() && QDateTime::currentDateTime().time().hour() >= config_->miscConfig().Time_Complete_Transaction_.hour())
+  {
+    setHasCompletedTransaction(true);
+    assets_->completeRemainingTransactions();
+  }
+  else
+    Logger::get().append("AgentController.CompleteRemainingTransactions: Tried to complete a transaction while flagged as already done!", true);
 }
 
 bool AgentController::tryToWake()
