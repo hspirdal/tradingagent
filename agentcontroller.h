@@ -30,14 +30,7 @@ public:
 
     bool tryToWake();
     void completeRemainingTransactions();
-    void setSystemPrice(double systemPrice)
-    {
-      assets_->setRealSystemPrice(systemPrice);
-      // Don't want to set this flag until it is fairly close to  the time the flag is ment to work for.
-      //if(currentDate().time().hour() >= (config_->miscConfig().Time_Predict_Price_.hour()-2))
-      isFreshSystemPrice_ = true;
-    }
-
+    void setSystemPrice(double systemPrice);
 
   private:
     std::shared_ptr<Config> config_;

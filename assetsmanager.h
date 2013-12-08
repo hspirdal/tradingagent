@@ -3,7 +3,7 @@
 
 #include "transactionlogger.h"
 #include <memory>
-#include <queue>
+#include <deque>
 #include "constants.h"
 #include <Config.h>
 #include "Order.h"
@@ -37,7 +37,7 @@ private:
   double money_;
   double energy_;
   double sysPriceReal_;
-  std::queue<Order> remainingOrders_;
+  std::deque<Order> remainingOrders_;
 
 
 
@@ -52,6 +52,8 @@ private:
   void appendEnergy(double amount) { energy_ += amount; }
 
   unsigned int nextOrderNumber();
+  void saveOrders();
+  void loadOrders();
 };
 
 #endif // ASSETSMANAGER_H

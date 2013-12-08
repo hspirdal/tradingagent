@@ -231,4 +231,24 @@ QString Util::readFile(const QString filename)
   return content;
 }
 
+std::deque<Order> Util::loadOrderFile(const QString& filename)
+{
+  std::deque<Order> orders;
+  // Not exactly CSV file, but close. :)
+  QList<QStringList> rawparts = Util::loadCSVFile(filename, ' ');
+  for(QStringList line : rawparts)
+  {
+    Order order;
+    order.orderNumber_ = line[0].toUInt();
+    order.dateTime_ = QDateTime::fromString(line[1]);
+    order.predictedUnitPrice_ = line[2].toDouble();
+    order.systemPriceAtTime_ = line[3].toDouble();
+    order.boughtAmountEnergy_ = line[4].toDouble();
+    order.soldAmountEnergy_ = line[5].toDouble();
+    orders.push_back(order);
+  }
+  return orders;
+}
+
+
 

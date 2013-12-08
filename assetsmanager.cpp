@@ -6,6 +6,7 @@
 AssetsManager::AssetsManager(std::shared_ptr<Config> config, std::shared_ptr<TransactionLogger> log)
   : config_(config), log_(log), money_(0.0), energy_(0), sysPriceReal_(0.0)
 {
+  //loadOrders();
 }
 
 unsigned int AssetsManager::nextOrderNumber()
@@ -15,11 +16,27 @@ unsigned int AssetsManager::nextOrderNumber()
   return next;
 }
 
+void AssetsManager::saveOrders()
+{
+  QString content;
+  for(Order order : remainingOrders_)
+    content.append(order.toString());
+
+  // All orders should be in memory; overwrite.
+  Util::writeFile("orders.bak", content.toStdString(), true);
+}
+
+void AssetsManager::loadOrders()
+{
+  remainingOrders_= Util::loadOrderFile("orders.bak");
+}
+
 bool AssetsManager::setupBuyEnergyOrder(double amount, double predictedPrice)
 {
   Order order(amount, 0.0, predictedPrice, sysPriceReal_,  nextOrderNumber());
-  remainingOrders_.push(order);
+  remainingOrders_.push_back(order);
   log_->logBuyEnergyOrder(order);
+  saveOrders();
 
   return true;
 }
@@ -30,8 +47,9 @@ bool AssetsManager::setupSellEnergy(double amount, double predictedPrice)
   // The rules allow for this, but it might be unfortunate as the rules dicate that we would have to sell all energy on the following turn or lose.
 
   Order order(0.0, amount, predictedPrice, sysPriceReal_, nextOrderNumber());
-  remainingOrders_.push((order));
+  remainingOrders_.push_back((order));
   log_->logSellEnergyOrder(order);
+  saveOrders();
 
   return true;
 }
@@ -103,10 +121,11 @@ void AssetsManager::completeRemainingTransactions()
       this->appendFunds(moneyBack);
       log_->logTransferSoldEnergy(order, energy(), money(), sysPriceReal_);
     }
-    remainingOrders_.pop();
+    remainingOrders_.pop_front();
     config_->setValue(SectionName, "money" , money_);
     config_->setValue(SectionName, "energy" , energy_);
     config_->setValue(SectionName, "lastSysPrice" , sysPriceReal_);
+    saveOrders();
   }
 }
 

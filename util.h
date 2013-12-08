@@ -6,6 +6,8 @@
 #include <QDateTime>
 #include <QMap>
 #include <assert.h>
+#include "Order.h"
+#include <deque>
 
 class Util
 {
@@ -20,6 +22,7 @@ public:
   static QMap<QDateTime, double> extractPricesWithinDate(const QMap<QDateTime, double>& spotprices, QDateTime from, QDateTime to);
   static bool writeFile(const std::string& filename, const std::string& content, bool overwrite = false);
   static QString readFile(const QString filename);
+  static std::deque<Order> loadOrderFile(const QString& filename);
 
   static bool lessEqualAbs(double a, double b, double epsilon = 10e-8)
   {

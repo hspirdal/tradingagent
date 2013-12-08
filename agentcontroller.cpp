@@ -107,6 +107,7 @@ void AgentController::setLatestDailyPrices(const QMap<QDateTime, double>& latest
   // Reverse it back i correct order.
   std::reverse(latestDailyPrices_.begin(), latestDailyPrices_.end());
   isFreshPriceData_ = true;
+  log_->append("Updated fresh system prices for the last " + QString::number(config_->neuralConfig().DayPeriod_) + " days.", true);
 }
 
 void AgentController::resetFlags()
@@ -120,6 +121,7 @@ void AgentController::resetFlags()
   setCurrentDay(static_cast<unsigned int>(QDateTime::currentDateTime().date().day()));
 
   latestDailyPrices_.clear();
+  log_->append("AgentController flags reset.", true);
 }
 
 void AgentController::completeRemainingTransactions()
@@ -142,6 +144,13 @@ bool AgentController::tryToWake()
     return true;
   }
   return false;
+}
+
+void AgentController::setSystemPrice(double systemPrice)
+{
+  assets_->setRealSystemPrice(systemPrice);
+  isFreshSystemPrice_ = true;
+  log_->append("AgentController - Updated the system price.", true);
 }
 
 void AgentController::setHasMadeOrder(bool hasMadeOrder)
