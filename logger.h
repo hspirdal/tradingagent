@@ -1,13 +1,11 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <QObject>
 #include <QString>
 #include <memory>
 
-class Logger : public QObject
+class Logger
 {
-  Q_OBJECT
 public:
   Logger(QString logfile);
 
@@ -16,9 +14,6 @@ public:
 
   // Making the logger be able to work as a singleton as well because it's convenient.
   static Logger& get() { static Logger instance_; return instance_; }
-
-signals:
-  void recordAdded(QString message);
 
 protected:
   QString logfile_;

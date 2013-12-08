@@ -56,7 +56,7 @@ void AssetsManager::setMoney(double money)
 {
   money_ = money;
   config_->setValue(SectionName, "money" , money_);
-  qDebug() << "money:" << config_->value("assets", "money");
+  //qDebug() << "money:" << config_->value("assets", "money");
 }
 
 void AssetsManager::setEnergy(double energy)

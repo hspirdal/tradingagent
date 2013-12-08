@@ -1,10 +1,9 @@
 #include "neuralnet.h"
 #include <QDebug>
-#include "logger.h"
 
-NeuralNet::NeuralNet(const NeuralConfig& config)
+NeuralNet::NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log)
 :
-  config_(config),
+  config_(config), log_(log),
   Nameset_(config.Nameset_), MaxPriceExpected_(config.MaxPriceExpected_),
   DayAheadLong_(config.DayAheadLong_), NumLayers_(config.NumLayers_), NumNeuronsHidden_(config.NumNeuronsHidden_),
   NumOutputs_(config.NumOutputs_), DesiredError_(config.DesiredError_), MaxEpochs_(config.MaxEpochs_), EpochsBetweenReports_(config.EpochsBetweenReports_)
@@ -117,8 +116,9 @@ void NeuralNet::trainSet(DataTrainSet &set)
   FANN::neural_net nn;
   if(!nn.create_standard(num_layers, num_input, num_neurons_hidden, num_output))
   {
-    Logger::get().append("NeuralNet.Trainset: " + QString::fromStdString(nn.get_errstr()), true);
-    assert(false);
+    log_->append("NeuralNet.Trainset: " + QString::fromStdString(nn.get_errstr()), true);
+    nn.destroy();
+    return;
   }
 
   nn.set_activation_function_hidden(FANN::SIGMOID_SYMMETRIC);
@@ -127,7 +127,7 @@ void NeuralNet::trainSet(DataTrainSet &set)
   nn.train_on_file(fullDataTrainFileName(set).toStdString(), max_epochs, epochs_between_reports, desired_error);
   if(!nn.save(fullNeuralFileName(set.name()).toStdString()))
   {
-    Logger::get().append("NeuralNet::TrainSet: Error saving .net file after training.", true);
+    log_->append("NeuralNet::TrainSet: Error saving .net file after training.", true);
   }
   nn.destroy();
 }
@@ -135,7 +135,7 @@ void NeuralNet::trainSet(DataTrainSet &set)
 double NeuralNet::estimateAveragePriceNextPeriod(const std::vector<double>& priceWindow)
 {
   FANN::neural_net nn;
-  if(!nn.create_from_file("testset_avg_2011_2013_daily_NOK.net")) Logger::get().append("NN.EstimateAvgPriceNextPeriod: could probably not find .net file.");
+  if(!nn.create_from_file("testset_avg_2011_2013_daily_NOK.net")) log_->append("NN.EstimateAvgPriceNextPeriod: could probably not find .net file.", true);
 
   fann_type freq[priceWindow.size()];
   for(unsigned int i = 0; i < priceWindow.size(); i++)
@@ -149,7 +149,7 @@ double NeuralNet::estimateAveragePriceNextPeriod(const std::vector<double>& pric
 double NeuralNet::estimateDayAheadPrice(const std::vector<double> &priceWindow)
 {
   FANN::neural_net nn;
-  if(!nn.create_from_file("testset_dayahead_2011_2013_daily_NOK.net")) Logger::get().append("NN.EstimateDayAheadPrice: could probably not find .net file.");
+  if(!nn.create_from_file("testset_dayahead_2011_2013_daily_NOK.net")) log_->append("NN.EstimateDayAheadPrice: could probably not find .net file.", true);
 
   fann_type freq[priceWindow.size()];
   for(unsigned int i = 0; i < priceWindow.size(); i++)

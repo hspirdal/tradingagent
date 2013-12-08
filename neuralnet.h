@@ -16,11 +16,12 @@
 #include <deque>
 #include "NeuralConfig.h"
 #include "constants.h"
+#include "applicationlogger.h"
 
 class NeuralNet
 {
 public:
-  NeuralNet(const NeuralConfig& config);
+  NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log);
   ~NeuralNet();
 
   void createTrainSetAverage(const QString& trainSetName, const QMap<QDateTime, double>& spotprices, const unsigned int DayPeriod);
@@ -38,6 +39,7 @@ public:
 
 private:
   const NeuralConfig& config_;
+  std::shared_ptr<ApplicationLogger> log_;
   const QString Nameset_;
   const double MaxPriceExpected_;
   QList<DataTrainSet*> trainingSets_;

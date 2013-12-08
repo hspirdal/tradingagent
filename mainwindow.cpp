@@ -13,20 +13,36 @@ MainWindow::MainWindow(QWidget *parent)
   ui->setupUi(this);
 
   config_ = std::make_shared<Config>(Util::loadIniFile("config.ini"));
-  assets_ = std::make_shared<AssetsManager>(config_);
-  neurnet_ = std::unique_ptr<NeuralNet>(new NeuralNet(config_.get()->neuralConfig()));
+  //QString logfile, const QString& clientEmailAddr, const QString& clientSenderName, const QString& clientGmailPassw, QList<QString> recipients
+  QList<QString> recipients; recipients << config_->agentInfoConfig().receiverEmail_ << config_->agentInfoConfig().receiverEmail2_;
+  log_ = std::make_shared<ApplicationLogger>("log.log", config_->agentInfoConfig().ClientEmailAddr_, config_->agentInfoConfig().ClientName_,
+            config_->agentInfoConfig().SmtpPassw_, recipients);
+
+
+  transLog_ = std::make_shared<TransactionLogger>("transaction.log", config_->agentInfoConfig().ClientEmailAddr_,
+  config_->agentInfoConfig().ClientName_,config_->agentInfoConfig().SmtpPassw_, recipients, config_);
+
+
+
+  assets_ = std::make_shared<AssetsManager>(config_, transLog_);
+  neurnet_ = std::unique_ptr<NeuralNet>(new NeuralNet(config_.get()->neuralConfig(), log_));
 
   assets_->setMoney(config_->assetsConfig().Money_);
   assets_->setEnergy(config_->assetsConfig().Energy_);
   assets_->setRealSystemPrice(config_->assetsConfig().LastSysPrice_);
-  agentController_ = std::unique_ptr<AgentController>(new AgentController(config_, neurnet_, assets_));
+  agentController_ = std::unique_ptr<AgentController>(new AgentController(config_, log_, neurnet_, assets_));
 
 
   QObject::connect(network_.get(), SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
   QObject::connect(timer_.get(), SIGNAL(timeout()), this, SLOT(onTimerUpdate()));
+  QObject::connect(log_.get(), SIGNAL(valueChanged(QString)), this, SLOT(appendWindowLog(QString)));
+  QObject::connect(transLog_.get(), SIGNAL(valueChanged(QString)), this, SLOT(appendWindowLog(QString)));
 
   fetchLatestSpotPrice();
   updateAll();
+
+  // TODO: save remaningOrders.
+
 }
 
 MainWindow::~MainWindow()
@@ -135,7 +151,7 @@ void MainWindow::onTimerUpdate()
     if(!agentController_->isFreshSystemPrice())
       fetchLatestSpotPrice();
     if(!agentController_->isFreshPriceData())
-      fetchFreshPricesFromDisk();
+      fetchFreshPrices();
 
     // If preliminary stuff is done, start the process of predicting.
     if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
@@ -164,7 +180,7 @@ void MainWindow::on_btnTrainData_clicked()
 
 void MainWindow::appendWindowLog(const QString& log)
 {
-  ui->txtbxOverviewLog->append(log);
+  ui->txtbxOverviewLog->append(QDateTime::currentDateTime().toString() + ": " + log);
 }
 
 void MainWindow::on_btnStartAgent_clicked()

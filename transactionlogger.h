@@ -1,21 +1,17 @@
 #ifndef TRANSACTIONLOGGER_H
 #define TRANSACTIONLOGGER_H
 
-#include "logger.h"
+#include "applicationlogger.h"
 #include <memory>
 #include "3rdparty/SmtpClient-for-Qt/src/SmtpMime"
 #include "Config.h"
 #include "Order.h"
 
-class TransactionLogger : public Logger
+class TransactionLogger : public ApplicationLogger
 {
 public:
-  TransactionLogger(QString logfile, const AgentInfoConfig& config);
+  TransactionLogger(QString logfile, const QString& clientEmailAddr, const QString& clientSenderName, const QString& clientGmailPassw, QList<QString> recipients, std::shared_ptr<Config> config);
 
-//  void insufficientFundsBuying(unsigned int amount, double unitPrice, double currentFunds);
-//  void insufficientEnergySelling(unsigned int amount, double unitPrice, double currentEnergyStored);
-//  void appendBuyEnergy(unsigned int amount, double unitPrice, double currentFundsTotal, double currentEnergyTotal);
-//  void appendSellEnergy(unsigned int amount, double unitPrice, double currentFundsTotal, double currentEnergyTotal);
   void logBuyEnergyOrder(Order order);
   void logSellEnergyOrder(Order order);
   void logTransferBoughtEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice);
@@ -24,14 +20,7 @@ public:
   void logAvoidedBuyingEnergy(double predictedPrice, double currAmountEnergy, double currAmountMoney);
 
 private:
-  AgentInfoConfig config_;
-  bool sendEmail_;
-  QString email_;
-  std::unique_ptr<SmtpClient> smtp_;
-
-
-
-  void sendMail(QString email, QString subject, QString message, QString secondEmail = "");
+  std::shared_ptr<Config> config_;
 };
 
 #endif // TRANSACTIONLOGGER_H

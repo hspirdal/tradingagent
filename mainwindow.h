@@ -14,6 +14,8 @@
 #include <QNetworkAccessManager>
 #include <QTimer>
 #include "agentcontroller.h"
+#include "applicationlogger.h"
+#include "transactionlogger.h"
 
 namespace Ui {
   class MainWindow;
@@ -43,6 +45,8 @@ private:
   std::shared_ptr<AssetsManager> assets_;
   std::shared_ptr<NeuralNet> neurnet_;
   std::shared_ptr<Config> config_;
+  std::shared_ptr<ApplicationLogger> log_;
+  std::shared_ptr<TransactionLogger> transLog_;
   std::unique_ptr<QNetworkAccessManager> network_;
   std::unique_ptr<QTimer> timer_;
   std::unique_ptr<AgentController> agentController_;

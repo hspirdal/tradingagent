@@ -11,7 +11,7 @@
 class AssetsManager
 {
 public:
-  AssetsManager(std::shared_ptr<Config> config);
+  AssetsManager(std::shared_ptr<Config> config, std::shared_ptr<TransactionLogger> log);
 
   bool setupBuyEnergyOrder(double amount, double predictedPrice);
   bool setupSellEnergy(double amount, double predictedPrice);
@@ -33,10 +33,10 @@ public:
 
 private:
   std::shared_ptr<Config> config_;
+  std::shared_ptr<TransactionLogger> log_;
   double money_;
   double energy_;
   double sysPriceReal_;
-  std::unique_ptr<TransactionLogger> log_;
   std::queue<Order> remainingOrders_;
 
 

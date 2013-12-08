@@ -21,10 +21,8 @@ void Logger::append(QString message, QString logfile, bool writeDebug)
   in.close();
   std::ofstream out(logfile_.toStdString());
   const QString record = QDateTime::currentDateTime().toString() + ": " + message;
-  out << prevContents << message.toStdString() << std::endl;
+  out << prevContents << record.toStdString() << std::endl;
   out.close();
-
-  emit recordAdded(record);
 
   if(writeDebug)
     qDebug() << "Log:" << logfile << "-" << message;
