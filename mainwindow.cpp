@@ -25,10 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
   QObject::connect(network_.get(), SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
   QObject::connect(timer_.get(), SIGNAL(timeout()), this, SLOT(onTimerUpdate()));
 
+  fetchLatestSpotPrice();
   updateAll();
-
-  // TODO:
-  // config flag noting if agent has done its work today or not. Perhaps just log the flags true or false.
 }
 
 MainWindow::~MainWindow()
@@ -57,8 +55,6 @@ void MainWindow::updateAll()
 
   QString filenames = "Elspot Prices_2011_Daily_NOK.csv\nElspot Prices_2012_Daily_NOK.csv\nElspot Prices_2013_Daily_NOK.csv\n";
   ui->lblDatasetFile->setText(filenames);
-
-  fetchLatestSpotPrice();
 }
 
 void MainWindow::fetchLatestSpotPrice()
@@ -104,16 +100,27 @@ void MainWindow::onReply(QNetworkReply *reply)
   }
   else
   {
-    qDebug() << reply->errorString();
-    Logger::get().append(reply->errorString(), true);
+    // Error downloading http://www.nordpoolspot.com/PageFiles/9383/Elspot Prices_2013_Daily_NOK.xls - server replied: File not found
+    const QString err = "Error downloading  " + config_->parseConfig().UrlPrices2013Daily_;
+    if(reply->errorString().compare(err) == 0)
+    {
+      // I've detected that the file is down for a small timeperiod at around 07:30, but otherwise seems to stay up.
+      // We have plenty of time to try and parse it during the night, so lets just have it try again until it gets time-critical.
+      if(QDateTime::currentDateTime().time().hour() >= config_->miscConfig().Time_Predict_Price_.hour())
+        fetchFreshPricesFromDisk();
+      Logger::get().append("MainWindow.OnReply: Error downloading 2013 prices from Nordpool.", true);
+    }
+    else
+    {
+      qDebug() << reply->errorString();
+      Logger::get().append(reply->errorString(), true);
+    }
   }
   reply->deleteLater();
 }
 
 void MainWindow::onTimerUpdate()
 {
-  //updateAll();
-
   // If agent has performed its duties for the day, it will go to sleep, halting any further operation.
   // We keep polling him until it is a new calendarday. The agent should 'wake up' by then and clear previous flags.
   if(agentController_->agentSleepingUntilNextDay())
@@ -123,7 +130,7 @@ void MainWindow::onTimerUpdate()
   QDateTime now = QDateTime::currentDateTime();
   // Once the window for any of these opens, there's a number of flags that needs to be set to true, before we can go to the next step.
   // This is to ensure that everything happens in order, because we cannot trust an internet connection.
-  if(!agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
+  if(!agentController_->hasMadeOrder())
   {
     if(!agentController_->isFreshSystemPrice())
       fetchLatestSpotPrice();
@@ -131,7 +138,7 @@ void MainWindow::onTimerUpdate()
       fetchFreshPricesFromDisk();
 
     // If preliminary stuff is done, start the process of predicting.
-    if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData())
+    if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData() && now.time().hour() >= config_.get()->miscConfig().Time_Predict_Price_.hour())
       agentController_->predictPriceAhead();
 
 
@@ -141,6 +148,7 @@ void MainWindow::onTimerUpdate()
     // The time should be well past the updated daily price by now. It is time to complete the "frozen" transaction.
     agentController_->completeRemainingTransactions();
   }
+  updateAll();
 }
 
 

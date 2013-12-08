@@ -169,13 +169,17 @@ double Util::parseNordpoolSpotpriceNOK(const QString html)
     int end_NOKpriceIndex = 0;
     if(html.contains(Official))
     {
+      // On weekends, non-euro valuta is only preliminary, and is put in a td of class preliminary, so check for that.
+      if(html.contains(Preliminary))
+      {
+        start_NOKpriceIndex = html.indexOf(Preliminary) +  Preliminary.length();
+        //start_NOKpriceIndex = html.indexOf(Preliminary, first) + Preliminary.length();
+      }
+      else
+      {
       int first = html.indexOf(Official) +  Official.length();
       start_NOKpriceIndex = html.indexOf(Official, first) + Official.length();
-    }
-    else if(html.contains(Preliminary))
-    {
-      int first = html.indexOf(Preliminary) +  Preliminary.length();
-      start_NOKpriceIndex = html.indexOf(Preliminary, first) + Preliminary.length();
+      }
     }
     end_NOKpriceIndex = html.indexOf(EndTDtag, start_NOKpriceIndex);
     QString pricestring = html.mid(start_NOKpriceIndex, end_NOKpriceIndex-start_NOKpriceIndex);

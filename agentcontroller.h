@@ -35,8 +35,8 @@ public:
     {
       assets_->setRealSystemPrice(systemPrice);
       // Don't want to set this flag until it is fairly close to  the time the flag is ment to work for.
-      if(currentDate().time().hour() >= config_->miscConfig().Time_Predict_Price_.hour()-2)
-        isFreshSystemPrice_ = true;
+      //if(currentDate().time().hour() >= (config_->miscConfig().Time_Predict_Price_.hour()-2))
+      isFreshSystemPrice_ = true;
     }
 
 
@@ -57,8 +57,8 @@ public:
 
 
     void resetFlags();
-    void setHasMadeOrder(bool hasMadeOrder) { config_->setValue("agentinfo", "hasMadeOrder", static_cast<unsigned int>(hasMadeOrder ? 1:0)); }
-    void setHasCompletedTransaction(bool hasCompletedTransaction) { config_->setValue("agentinfo", "hasCompletedTransaction", static_cast<unsigned int>(hasCompletedTransaction ? 1:0)); }
+    void setHasMadeOrder(bool hasMadeOrder) { config_->setValue("agentinfo", "hasMadeOrder", static_cast<unsigned int>(hasMadeOrder ? 1:0));  }
+    void setHasCompletedTransaction(bool hasCompletedTransaction) { config_->setValue("agentinfo", "hasCompletedTransaction", static_cast<unsigned int>(hasCompletedTransaction ? 1:0)); setSleeping(hasCompletedTransaction);}
     void setSleeping(bool sleeping) { config_->setValue("agentinfo", "isAgentSleeping", static_cast<unsigned int>(sleeping ? 1:0)); }
     void setCurrentDay(unsigned int day) { config_->setValue("agentinfo", "currentDay", day); }
 

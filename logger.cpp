@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <QDebug>
+#include <QDateTime>
 
 Logger::Logger(QString logfile)
   : logfile_(logfile)
@@ -19,7 +20,7 @@ void Logger::append(QString message, QString logfile, bool writeDebug)
   std::string prevContents = std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
   in.close();
   std::ofstream out(logfile_.toStdString());
-  out << prevContents << message.toStdString() << std::endl;
+  out << prevContents << QDateTime::currentDateTime().toString().toStdString() <<  ": " << message.toStdString() << std::endl;
   out.close();
 
   if(writeDebug)

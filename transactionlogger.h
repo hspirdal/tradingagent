@@ -20,6 +20,8 @@ public:
   void logSellEnergyOrder(Order order);
   void logTransferBoughtEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice);
   void logTransferSoldEnergy(Order order, double currAmountEnergy, double currAmountMoney, double currSystemPrice);
+  void logAvoidedSellingEnergy(double predictedPrice, double currAmountEnergy, double currAmountMoney);
+  void logAvoidedBuyingEnergy(double predictedPrice, double currAmountEnergy, double currAmountMoney);
 
 private:
   AgentInfoConfig config_;

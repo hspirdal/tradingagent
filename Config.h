@@ -44,7 +44,7 @@ struct AgentInfoConfig
   bool HasMadeOrder_;
   bool HasCompletedTransaction_;
   bool IsAgentSleeping_;
-
+  bool ResetFlagsOnStartup_;
 };
 
 struct ParseConfig
@@ -189,6 +189,7 @@ private:
     agentInfoConfig_.HasMadeOrder_ = value(Section, "hasMadeOrder").toUInt() > 0 ? true : false;
     agentInfoConfig_.HasCompletedTransaction_ = value(Section, "hasCompletedTransaction").toUInt() > 0 ? true : false;
     agentInfoConfig_.IsAgentSleeping_ = value(Section, "isAgentSleeping").toUInt() > 0 ? true : false;
+    agentInfoConfig_.ResetFlagsOnStartup_ = value(Section, "resetFlagsOnStartup").toUInt() > 0 ? true : false;
   }
 
   void loadParseConfig()

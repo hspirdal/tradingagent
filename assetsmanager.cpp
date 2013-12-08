@@ -36,6 +36,16 @@ bool AssetsManager::setupSellEnergy(double amount, double predictedPrice)
   return true;
 }
 
+void AssetsManager::setupAvoidBuyingEnergy(double predictedPrice)
+{
+  log_->logAvoidedBuyingEnergy(predictedPrice, energy(), money());
+}
+
+void AssetsManager::setupAvoidSellingEnergy(double predictedPrice)
+{
+  log_->logAvoidedSellingEnergy(predictedPrice, energy(), money());
+}
+
 void AssetsManager::setRealSystemPrice(double sysPriceReal)
 {
   sysPriceReal_ = sysPriceReal;
@@ -59,16 +69,16 @@ bool AssetsManager::rule_moneyHighEnergyLow()
 {
   double percentMoneyLeft = money() / StartingMoney;
   double percentEnergyLeft = energy() / StartingEnergy;
-  double ratio = percentMoneyLeft / percentEnergyLeft;
-  return ratio < 0.25;
+  //double ratio = percentMoneyLeft / percentEnergyLeft;
+  return percentEnergyLeft < 0.25 && percentMoneyLeft > 0.25;
 }
 
 bool AssetsManager::rule_moneyLowEnergyHigh()
 {
   double percentMoneyLeft = money() / StartingMoney;
   double percentEnergyLeft = energy() / StartingEnergy;
-  double ratio = percentEnergyLeft / percentMoneyLeft;
-  return ratio < 0.25;
+  //double ratio = percentEnergyLeft / percentMoneyLeft;
+  return percentMoneyLeft < 0.25 && percentEnergyLeft > 0.25;
 }
 
 void AssetsManager::completeRemainingTransactions()

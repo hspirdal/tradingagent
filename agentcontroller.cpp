@@ -4,7 +4,10 @@
 AgentController::AgentController(std::shared_ptr<Config> config, std::shared_ptr<NeuralNet> neurnet, std::shared_ptr<AssetsManager> assets)
 : config_(config), logger_(new Logger("log.log")), neurnet_(neurnet), assets_(assets)
 {
-  resetFlags();
+  // Wouldn't want to reset various flags if program was restarted for some reason.
+  if(config_->agentInfoConfig().ResetFlagsOnStartup_)
+    resetFlags();
+
   // track days gone past, and use it to become more aggressive after a while.
   dateStarted_ = QDateTime::currentDateTime();
 }
@@ -43,7 +46,12 @@ void AgentController::predictPriceAhead()
   {
     // Do not buy if cash reserves are low, if energy amount is still fairly high.
     if(assets_->rule_moneyLowEnergyHigh())
+    {
+      // Would still need to make a record of it, though.
+      assets_->setupAvoidBuyingEnergy(dayAheadprice);
+      setHasCompletedTransaction(true);
       return;
+    }
 
     // Depending on scale and probability, this could be a good time to buy.
     // never buy more than [max] of total money assets.
@@ -56,7 +64,12 @@ void AgentController::predictPriceAhead()
   {
     // Don't sell off too much energy
     if(assets_->rule_moneyHighEnergyLow())
+    {
+      // Would still need to make a record of it, though.
+      assets_->setupAvoidSellingEnergy(dayAheadprice);
+      setHasCompletedTransaction(true);
       return;
+    }
 
     // like above, it can be profitable to sell if the change is big enough.
     // never sell more than [max] of total money assets.
@@ -113,18 +126,17 @@ void AgentController::resetFlags()
 
 void AgentController::completeRemainingTransactions()
 {
-  // TODO curr date
   setHasCompletedTransaction(true);
-  setSleeping(true);
   assets_->completeRemainingTransactions();
 }
 
 bool AgentController::tryToWake()
 {
-  if(currentTime_.date().day() <= QDateTime::currentDateTime().date().day())
-    return false;
-
-  // It is next day. Time to clear all prev flags.
-  resetFlags();
-  return true;
+  if(currentTime_.date().day() < QDateTime::currentDateTime().date().day())
+  {
+    // It is next day. Time to clear all prev flags.
+    resetFlags();
+    return true;
+  }
+  return false;
 }

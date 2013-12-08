@@ -15,6 +15,8 @@ public:
 
   bool setupBuyEnergyOrder(double amount, double predictedPrice);
   bool setupSellEnergy(double amount, double predictedPrice);
+  void setupAvoidBuyingEnergy(double predictedPrice);
+  void setupAvoidSellingEnergy(double predictedPrice);
 
   double money() const { return money_; }
   double energy() const { return energy_; }
