@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
   QObject::connect(transLog_.get(), SIGNAL(valueChanged(QString)), this, SLOT(appendWindowLog(QString)));
 
   fetchLatestSpotPrice();
+  fetchFreshPrices();
   updateAll();
 
   // TODO: save remaningOrders.
