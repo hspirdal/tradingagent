@@ -54,7 +54,7 @@ void AgentController::predictPriceAhead()
 
     // Depending on scale and probability, this could be a good time to buy.
     // never buy more than [max] of total money assets.
-    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, config_->agentInfoConfig().MaxMoneySpend_);
+    const double percent = Util::clamp(1-ratio, Constants::ApproxZeroDouble, config_->agentInfoConfig().MaxMoneySpend_);
     const double moneyToSpend = assets_->money() * percent;
     const double unitsToBuy = moneyToSpend / assets_->realSystemPrice();
     assets_->setupBuyEnergyOrder(unitsToBuy, dayAheadprice);

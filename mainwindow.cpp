@@ -42,6 +42,8 @@ MainWindow::MainWindow(QWidget *parent)
   updateAll();
 
   // TODO: save remaningOrders.
+  // TODO: add mails on own line in config.
+  // TOOD: currentDay does not update if app started after midnight.
 
 }
 
