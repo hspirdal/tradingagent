@@ -74,6 +74,7 @@ void MainWindow::updateAll()
 
   QString filenames = "Elspot Prices_2011_Daily_NOK.csv\nElspot Prices_2012_Daily_NOK.csv\nElspot Prices_2013_Daily_NOK.csv\n";
   ui->lblDatasetFile->setText(filenames);
+  fetchLatestSpotPrice();
 }
 
 void MainWindow::fetchLatestSpotPrice()
@@ -205,4 +206,9 @@ void MainWindow::on_btnStartAgent_clicked()
       ui->lblStatus->setStyleSheet("QLabel { color : red }");
       appendWindowLog("Stopped running the agent.");
     }
+}
+
+void MainWindow::on_btnRefreshSpot_clicked()
+{
+    fetchLatestSpotPrice();
 }

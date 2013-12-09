@@ -6,7 +6,7 @@
 AssetsManager::AssetsManager(std::shared_ptr<Config> config, std::shared_ptr<TransactionLogger> log)
   : config_(config), log_(log), money_(0.0), energy_(0), sysPriceReal_(0.0)
 {
-  //loadOrders();
+  loadOrders();
 }
 
 unsigned int AssetsManager::nextOrderNumber()

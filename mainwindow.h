@@ -37,6 +37,7 @@ private slots:
   void onTimerUpdate();
   void on_btnTrainData_clicked();
   void on_btnStartAgent_clicked();
+  void on_btnRefreshSpot_clicked();
 
 private:
   Ui::MainWindow *ui;

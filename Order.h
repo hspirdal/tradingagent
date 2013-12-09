@@ -16,12 +16,12 @@ struct Order
   QString toString() const
   {
     QString content = "";
-    content.append(QString::number(orderNumber_) + " ");
-    content.append(dateTime_.toString(Constants::DateTimeFormat) + " ");
-    content.append(QString::number(predictedUnitPrice_) + " ");
-    content.append(QString::number(systemPriceAtTime_) + " ");
-    content.append(QString::number(boughtAmountEnergy_) + " ");
-    content.append(QString::number(soldAmountEnergy_) + " \n");
+    content.append(QString::number(orderNumber_) + "|");
+    content.append(dateTime_.toString(Constants::DateTimeFormat) + "|");
+    content.append(QString::number(predictedUnitPrice_) + "|");
+    content.append(QString::number(systemPriceAtTime_) + "|");
+    content.append(QString::number(boughtAmountEnergy_) + "|");
+    content.append(QString::number(soldAmountEnergy_) + "|\n");
     return content;
   }
 

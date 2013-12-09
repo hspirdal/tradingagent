@@ -53,6 +53,19 @@
        </rect>
       </property>
      </widget>
+     <widget class="QPushButton" name="btnRefreshSpot">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>290</y>
+        <width>80</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Refresh Spot</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="tabTrainer">
      <attribute name="title">
@@ -177,7 +190,7 @@
      <string>Energy:</string>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>150</x>
@@ -210,7 +223,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>440</x>
