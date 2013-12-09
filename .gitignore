@@ -1,3 +1,4 @@
 /3rdparty/
-TradingAgent.pro.user
+*pro.user
 libSMTPEmail.a
+*.autosave
