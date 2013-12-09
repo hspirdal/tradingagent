@@ -83,12 +83,12 @@ void AgentController::createAndTrainSet(const QString &trainSetName, const QMap<
   const QString avg = "avg_" + trainSetName;
   neurnet_.get()->createTrainSetAverage(avg, spotprices, config_.get()->neuralConfig().DayAheadLong_);
   neurnet_.get()->trainSet(avg);
-  log_.get()->append("CreateAndTrainSet: created and trained file named " + avg, true);
+  log_->append("CreateAndTrainSet: created and trained file named " + avg, true);
 
   const QString ahead = "dayahead_" + trainSetName;
   neurnet_.get()->createTrainSetDayAhead(ahead, spotprices, config_.get()->neuralConfig().DayPeriod_);
   neurnet_.get()->trainSet(ahead);
-  log_.get()->append("CreateAndTrainSet: created and trained file named " + ahead, true);
+  log_->append("CreateAndTrainSet: created and trained file named " + ahead, true);
 }
 
 void AgentController::setLatestDailyPrices(const QMap<QDateTime, double>& latestDaily)

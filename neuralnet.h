@@ -1,12 +1,13 @@
 #ifndef NEURALNET_H
 #define NEURALNET_H
 
-#include "floatfann.h"
+//#include "floatfann.h"
 //#include <doublefann.h>
 //#include "3rdparty/FANN/floatfann.h"
 //#include "3rdparty/FANN/doublefann.h"
-#include <fann_cpp.h>
-//#include "3rdparty/FANN/fann_cpp.h"
+//#include <fann_cpp.h>
+#include "3rdparty/FANN/floatfann.h"
+#include "3rdparty/FANN/fann_cpp.h"
 #include <QString>
 #include <QMap>
 #include <QList>
@@ -17,25 +18,33 @@
 #include "NeuralConfig.h"
 #include "constants.h"
 #include "applicationlogger.h"
+#include "ui_mainwindow.h"
 
 class NeuralNet
 {
 public:
-  NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log);
+  NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log, Ui::MainWindow* window);
   ~NeuralNet();
 
   void createTrainSetAverage(const QString& trainSetName, const QMap<QDateTime, double>& spotprices, const unsigned int DayPeriod);
   void createTrainSetDayAhead(const QString &trainSetName, const QMap<QDateTime, double>& spotprices, const unsigned int DayPeriod);
 
+
   //void createTrainSet(const QString& trainSetName, const QMap<QDateTime, double>& spotprices);
   void train();
   void trainSet(const QString& setname);
   void trainSet(DataTrainSet& set);
+  void trainSetCallback(DataTrainSet& set);
   void estimateNextPeriod(const QMap<QDateTime, double>& spotprices, QDateTime startdate, unsigned int numDaysPeriod, unsigned int numDaysAhead);
 
   /* estimations */
   double estimateAveragePriceNextPeriod(const std::vector<double>& priceWindow);
   double estimateDayAheadPrice(const std::vector<double>& priceWindow);
+
+  // Callback to FANN which is used for progress info while training.
+  static int print_callback(FANN::neural_net &net, FANN::training_data &train, unsigned int max_epochs, unsigned int epochs_between_reports,
+              float desired_error, unsigned int epochs, void* neuralNet);
+
 
 private:
   const NeuralConfig& config_;
@@ -52,6 +61,8 @@ private:
   const unsigned int MaxEpochs_;
   const unsigned int EpochsBetweenReports_;
 
+  std::unique_ptr<FANN::neural_net> neurnet_;
+  Ui::MainWindow* window_;
 
 
   QString fullDataTrainFileName(const DataTrainSet& set) const;

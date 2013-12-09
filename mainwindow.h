@@ -39,6 +39,8 @@ private slots:
   void on_btnStartAgent_clicked();
   void on_btnRefreshSpot_clicked();
 
+
+
 private:
   Ui::MainWindow *ui;
   QMap<QString, QFile*> rawDataFiles_;
@@ -57,6 +59,10 @@ private:
   void fetchLatestSpotPrice();
   void fetchFreshPrices();
   void fetchFreshPricesFromDisk();
+
+
+
+
 
 };
 

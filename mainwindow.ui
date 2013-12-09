@@ -101,7 +101,7 @@
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>100</y>
+        <y>70</y>
         <width>91</width>
         <height>16</height>
        </rect>
@@ -114,7 +114,7 @@
       <property name="geometry">
        <rect>
         <x>100</x>
-        <y>90</y>
+        <y>60</y>
         <width>251</width>
         <height>41</height>
        </rect>
@@ -127,13 +127,36 @@
       <property name="geometry">
        <rect>
         <x>210</x>
-        <y>290</y>
+        <y>260</y>
         <width>141</width>
         <height>51</height>
        </rect>
       </property>
       <property name="text">
        <string>Start Training</string>
+      </property>
+     </widget>
+     <widget class="QProgressBar" name="pbTrainingProgress">
+      <property name="geometry">
+       <rect>
+        <x>400</x>
+        <y>280</y>
+        <width>118</width>
+        <height>23</height>
+       </rect>
+      </property>
+      <property name="value">
+       <number>24</number>
+      </property>
+     </widget>
+     <widget class="QTextEdit" name="txtTrainingStatus">
+      <property name="geometry">
+       <rect>
+        <x>43</x>
+        <y>149</y>
+        <width>501</width>
+        <height>101</height>
+       </rect>
       </property>
      </widget>
     </widget>

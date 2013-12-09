@@ -3459,7 +3459,7 @@ public:
                 data.train_data = train;
 
                 int result = (*user_data->user_callback)(*user_data->net,
-                    data, max_epochs, epochs_between_reports, desired_error, epochs, user_data);
+                    data, max_epochs, epochs_between_reports, desired_error, epochs, user_data->user_data);
 
                 data.train_data = NULL; // Prevent automatic cleanup
                 return result;

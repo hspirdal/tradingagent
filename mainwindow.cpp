@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
   assets_ = std::make_shared<AssetsManager>(config_, transLog_);
-  neurnet_ = std::unique_ptr<NeuralNet>(new NeuralNet(config_.get()->neuralConfig(), log_));
+  neurnet_ = std::make_shared<NeuralNet>(config_.get()->neuralConfig(), log_, ui);
 
   assets_->setMoney(config_->assetsConfig().Money_);
   assets_->setEnergy(config_->assetsConfig().Energy_);
@@ -41,6 +41,13 @@ MainWindow::MainWindow(QWidget *parent)
   fetchLatestSpotPrice();
   fetchFreshPrices();
   updateAll();
+
+  ui->txtbxOverviewLog->setReadOnly(true);
+  ui->pbTrainingProgress->setMinimum(0);
+  ui->pbTrainingProgress->setMaximum(config_->neuralConfig().MaxEpochs_);
+  ui->pbTrainingProgress->hide();
+  ui->txtTrainingStatus->setReadOnly(true);
+
 
   // TODO: save remaningOrders.
   // TODO: add mails on own line in config.
@@ -178,6 +185,7 @@ void MainWindow::on_btnTrainData_clicked()
   QList<QStringList> dataMatrix = Util::loadCSVFiles(files, ',');
   //QList<QStringList> dataMatrix = Util::loadCSVFile("Data/Elspot Prices_2013_Daily_NOK.csv", ',');
   auto prices = Util::extractSystemPriceDaily(dataMatrix);
+
   agentController_.get()->createAndTrainSet("2011_2013_daily_NOK", prices);
 
 }

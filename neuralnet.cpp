@@ -1,17 +1,21 @@
 #include "neuralnet.h"
 #include <QDebug>
 
-NeuralNet::NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log)
+NeuralNet::NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log, Ui::MainWindow* window)
 :
   config_(config), log_(log),
   Nameset_(config.Nameset_), MaxPriceExpected_(config.MaxPriceExpected_),
   DayAheadLong_(config.DayAheadLong_), NumLayers_(config.NumLayers_), NumNeuronsHidden_(config.NumNeuronsHidden_),
   NumOutputs_(config.NumOutputs_), DesiredError_(config.DesiredError_), MaxEpochs_(config.MaxEpochs_), EpochsBetweenReports_(config.EpochsBetweenReports_)
-{
-}
+  {
+    neurnet_ = std::unique_ptr<FANN::neural_net>(new FANN::neural_net());
+    window_ = window;
+  }
 
 NeuralNet::~NeuralNet()
 {
+  neurnet_->destroy();
+
   for(DataTrainSet* set : trainingSets_)
     if(set != NULL)
       delete set;
@@ -112,35 +116,43 @@ void NeuralNet::trainSet(DataTrainSet &set)
   const unsigned int max_epochs = MaxEpochs_;
   const unsigned int epochs_between_reports = EpochsBetweenReports_;
 
-
-  FANN::neural_net nn;
-  if(!nn.create_standard(num_layers, num_input, num_neurons_hidden, num_output))
+  if(!neurnet_->create_standard(num_layers, num_input, num_neurons_hidden, num_output))
   {
-    log_->append("NeuralNet.Trainset: " + QString::fromStdString(nn.get_errstr()), true);
-    nn.destroy();
+    log_->append("NeuralNet.Trainset: " + QString::fromStdString(neurnet_->get_errstr()), true);
     return;
   }
 
-  nn.set_activation_function_hidden(FANN::SIGMOID_SYMMETRIC);
-  nn.set_activation_function_output(FANN::SIGMOID_SYMMETRIC);
+  neurnet_->set_activation_function_hidden(FANN::SIGMOID_SYMMETRIC);
+  neurnet_->set_activation_function_output(FANN::SIGMOID_SYMMETRIC);
 
-  nn.train_on_file(fullDataTrainFileName(set).toStdString(), max_epochs, epochs_between_reports, desired_error);
-  if(!nn.save(fullNeuralFileName(set.name()).toStdString()))
+
+  neurnet_->set_callback(&NeuralNet::print_callback, (void*)(window_));
+  window_->pbTrainingProgress->show();
+  neurnet_->train_on_file(fullDataTrainFileName(set).toStdString(), max_epochs, epochs_between_reports, desired_error);
+  window_->pbTrainingProgress->hide();
+  window_->txtTrainingStatus->append("Done training.");
+  if(!neurnet_->save(fullNeuralFileName(set.name()).toStdString()))
   {
     log_->append("NeuralNet::TrainSet: Error saving .net file after training.", true);
   }
-  nn.destroy();
+}
+
+int NeuralNet::print_callback(FANN::neural_net &net, FANN::training_data &/*train*/, unsigned int /*max_epochs*/, unsigned int /*epochs_between_reports*/, float /*desired_error*/, unsigned int epochs, void* user_data)
+{
+  Ui::MainWindow* nn = (Ui::MainWindow*)user_data;
+  nn->txtTrainingStatus->append(QString("Epoch: %1. Current error: %2.").arg(QString::number(epochs), QString::number(net.get_MSE(), 'G', 8)));
+  nn->pbTrainingProgress->setValue(epochs);
+  return 0;
 }
 
 double NeuralNet::estimateAveragePriceNextPeriod(const std::vector<double>& priceWindow)
 {
-  FANN::neural_net nn;
-  if(!nn.create_from_file("testset_avg_2011_2013_daily_NOK.net")) log_->append("NN.EstimateAvgPriceNextPeriod: could probably not find .net file.", true);
+  if(!neurnet_->create_from_file("testset_avg_2011_2013_daily_NOK.net")) log_->append("NN.EstimateAvgPriceNextPeriod: could probably not find .net file.", true);
 
   fann_type freq[priceWindow.size()];
   for(unsigned int i = 0; i < priceWindow.size(); i++)
     freq[i] = priceWindow[i] / MaxPriceExpected_;
-  fann_type* output = nn.run(freq);
+  fann_type* output = neurnet_->run(freq);
   // Output shouldn't hold more than one value, but in case we'd change to more later, make sure it won't break. Oh and scale it back up.
   double out =  output[0]*MaxPriceExpected_;
   return out;
@@ -148,13 +160,12 @@ double NeuralNet::estimateAveragePriceNextPeriod(const std::vector<double>& pric
 
 double NeuralNet::estimateDayAheadPrice(const std::vector<double> &priceWindow)
 {
-  FANN::neural_net nn;
-  if(!nn.create_from_file("testset_dayahead_2011_2013_daily_NOK.net")) log_->append("NN.EstimateDayAheadPrice: could probably not find .net file.", true);
+  if(!neurnet_->create_from_file("testset_dayahead_2011_2013_daily_NOK.net")) log_->append("NN.EstimateDayAheadPrice: could probably not find .net file.", true);
 
   fann_type freq[priceWindow.size()];
   for(unsigned int i = 0; i < priceWindow.size(); i++)
     freq[i] = priceWindow[i] / MaxPriceExpected_;
-  fann_type* output = nn.run(freq);
+  fann_type* output = neurnet_->run(freq);
   // Output shouldn't hold more than one value, but in case we'd change to more later, make sure it won't break. Oh and scale it back up.
   double out =  output[0]*MaxPriceExpected_;
   return out;
