@@ -4,6 +4,9 @@
 AgentController::AgentController(std::shared_ptr<Config> config, std::shared_ptr<ApplicationLogger> log, std::shared_ptr<NeuralNet> neurnet, std::shared_ptr<AssetsManager> assets)
 : config_(config), log_(log), neurnet_(neurnet), assets_(assets)
 {
+  this->isFreshSystemPrice_ = false;
+  this->isFreshPriceData_ = false;
+
   // Wouldn't want to reset various flags if program was restarted for some reason.
   if(config_->agentInfoConfig().ResetFlagsOnStartup_)
     resetFlags();

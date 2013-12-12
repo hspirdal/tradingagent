@@ -6,6 +6,7 @@
 #include "util.h"
 #include "constants.h"
 #include "NeuralConfig.h"
+#include "constants.h"
 
 MainWindow::MainWindow(QWidget *parent)
 : QMainWindow(parent), ui(new Ui::MainWindow), network_(new QNetworkAccessManager(this)), timer_(new QTimer(this)), agentRunning_(false)
@@ -115,6 +116,8 @@ void MainWindow::onReply(QNetworkReply *reply)
     {
       // We're parsing the latest spotprice in NOK from the Nordpool site.
       double spotprice = Util::parseNordpoolSpotpriceNOK(QString(reply->readAll()));
+      if(spotprice <= Constants::ApproxZeroDouble)
+        return;
       agentController_->setSystemPrice(spotprice);
       ui->lblSpotPrice->setText(QString::number(assets_.get()->realSystemPrice()));
     }
