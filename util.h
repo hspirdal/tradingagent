@@ -8,6 +8,7 @@
 #include <assert.h>
 #include "Order.h"
 #include <deque>
+#include <QFile>
 
 class Util
 {
@@ -17,6 +18,7 @@ public:
   static QMap<QString, QMap<QString, QString> > loadIniFile(const QString& filename);
   static QMap<QDateTime, double> extractSystemPriceDaily(const QList<QStringList>& dataMatrix);
   static QList<QStringList> loadCSVFiles(const QList<QString>& filenames, QChar separator);
+  static QList<QStringList> loadCSVFiles(const QList<QFile*>& files, QChar seperator);
   static QMap<QDateTime, double> parseXLS_daily(const QString& content);
   static double parseNordpoolSpotpriceNOK(const QString html);
   static QMap<QDateTime, double> extractPricesWithinDate(const QMap<QDateTime, double>& spotprices, QDateTime from, QDateTime to);

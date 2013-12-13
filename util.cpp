@@ -43,6 +43,15 @@ QList<QStringList> Util::loadCSVFiles(const QList<QString> &filenames, QChar sep
   return dataMatrix;
 }
 
+QList<QStringList> Util::loadCSVFiles(const QList<QFile*> &files, QChar seperator)
+{
+  QList<QStringList> dataMatrix;
+  for(QFile* file : files)
+    dataMatrix.append(loadCSVFile(file->fileName(), seperator));
+
+  return dataMatrix;
+}
+
 QMap<QString, QMap<QString, QString> > Util::loadIniFile(const QString &filename)
 {
   QFile file(filename);

@@ -39,49 +39,43 @@ MainWindow::MainWindow(QWidget *parent)
   QObject::connect(log_.get(), SIGNAL(valueChanged(QString)), this, SLOT(appendWindowLog(QString)));
   QObject::connect(transLog_.get(), SIGNAL(valueChanged(QString)), this, SLOT(appendWindowLog(QString)));
 
-  fetchLatestSpotPrice();
-  fetchFreshPrices();
-  updateAll();
-
   ui->txtbxOverviewLog->setReadOnly(true);
   ui->pbTrainingProgress->setMinimum(0);
   ui->pbTrainingProgress->setMaximum(config_->neuralConfig().MaxEpochs_);
   ui->pbTrainingProgress->hide();
   ui->txtTrainingStatus->setReadOnly(true);
 
+  ui->cmbDatasets->clear();
+  addDataset("Data/Elspot Prices_2011_Daily_NOK.csv");
+  addDataset("Data/Elspot Prices_2012_Daily_NOK.csv");
+  addDataset("Data/Elspot Prices_2013_Daily_NOK.csv");
+  ui->txtTrainerFileName->setText("2011_2013_daily_NOK");
 
-  // TODO: save remaningOrders.
+  fetchLatestSpotPrice();
+  fetchFreshPrices();
+  updateAll();
+
   // TODO: add mails on own line in config.
-  // TOOD: currentDay does not update if app started after midnight.
+  // TODO: add default datasets in config.
 
 }
 
 MainWindow::~MainWindow()
 {
+  for(auto itr = rawDataFiles_.begin(); itr != rawDataFiles_.end(); ++itr)
+    delete itr.value();
+
+  rawDataFiles_.clear();
+  ui->cmbDatasets->clear();
+
   delete ui;
 }
-
-//void MainWindow::on_btnAddSet_clicked()
-//{
-//  const QString path = QFileDialog::getOpenFileName(this, tr("Open CSV File"), QDir::currentPath(), tr("CSV Files (*.csv)"));
-//  QFile* raw = new QFile(path);
-//  QFileInfo fileInfo(raw->fileName());
-//  if(!rawDataFiles_.contains(fileInfo.fileName()))
-//  {
-//    rawDataFiles_.insert(raw->fileName(), raw);
-//    //ui->cmbDatasetRaw->insertItem(MainWindow::NextId_++, fileInfo.fileName());
-//  }
-
-//  qDebug() << path;
-//}
 
 void MainWindow::updateAll()
 {
   ui->lblCurrMoney->setText(QString::number(assets_->money(), 'G', 8));
   ui->lblCurrEnergy->setText(QString::number(assets_->energy(), 'G', 8));
 
-  QString filenames = "Elspot Prices_2011_Daily_NOK.csv\nElspot Prices_2012_Daily_NOK.csv\nElspot Prices_2013_Daily_NOK.csv\n";
-  ui->lblDatasetFile->setText(filenames);
   fetchLatestSpotPrice();
 }
 
@@ -184,12 +178,17 @@ void MainWindow::onTimerUpdate()
 
 void MainWindow::on_btnTrainData_clicked()
 {
-  QList<QString> files = {"Data/Elspot Prices_2011_Daily_NOK.csv", "Data/Elspot Prices_2012_Daily_NOK.csv", "Data/Elspot Prices_2013_Daily_NOK.csv"};
-  QList<QStringList> dataMatrix = Util::loadCSVFiles(files, ',');
+  if(rawDataFiles_.count() <= 0)
+  {
+    log_->append("MainWindow.TrainData: No dataset loaded.", true);
+    return;
+  }
+  //QList<QString> files = {"Data/Elspot Prices_2011_Daily_NOK.csv", "Data/Elspot Prices_2012_Daily_NOK.csv", "Data/Elspot Prices_2013_Daily_NOK.csv"};
   //QList<QStringList> dataMatrix = Util::loadCSVFile("Data/Elspot Prices_2013_Daily_NOK.csv", ',');
+  QList<QStringList> dataMatrix = Util::loadCSVFiles(rawDataFiles_.values(), ',');
   auto prices = Util::extractSystemPriceDaily(dataMatrix);
 
-  agentController_.get()->createAndTrainSet("2011_2013_daily_NOK", prices);
+  agentController_.get()->createAndTrainSet(ui->txtTrainerFileName->text(), prices);
 
 }
 
@@ -222,4 +221,46 @@ void MainWindow::on_btnStartAgent_clicked()
 void MainWindow::on_btnRefreshSpot_clicked()
 {
     fetchLatestSpotPrice();
+}
+
+void MainWindow::on_btnAddDataset_clicked()
+{
+  const QString path = QFileDialog::getOpenFileName(this, tr("Open CSV File"), QDir::currentPath(), tr("CSV Files (*.csv)"));
+  addDataset(path);
+}
+
+void MainWindow::on_btnRemoveDataset_clicked()
+{
+  int index = ui->cmbDatasets->currentIndex();
+  if(index >= 0)
+    removeDataset(index);
+}
+
+void MainWindow::addDataset(const QString& filename)
+{
+  if(!rawDataFiles_.contains(filename))
+  {
+    QFile* raw = new QFile(filename);
+    QFileInfo fileInfo(raw->fileName());
+    rawDataFiles_.insert(fileInfo.fileName(), raw);
+    ui->cmbDatasets->insertItem(ui->cmbDatasets->count(), fileInfo.fileName());
+  }
+}
+
+void MainWindow::removeDataset(int itemIndex)
+{
+  const QString filename = ui->cmbDatasets->itemText(itemIndex);
+  if(filename.isEmpty())
+  {
+    log_->append("MainWindow.RemoveDataset: itemIndex was not found. Index: " + QString::number(itemIndex), true);
+    return;
+  }
+
+  if(rawDataFiles_.contains(filename))
+  {
+    rawDataFiles_.remove(filename);
+    ui->cmbDatasets->removeItem(itemIndex);
+    return;
+  }
+  log_->append("MainWindow.RemoveDataset: filename was not found. Filename: " + filename, true);
 }
