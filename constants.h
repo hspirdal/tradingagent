@@ -11,6 +11,10 @@ namespace Constants
 
   enum RunMode { NotRunning, Running };
   enum TrainSetFormat { PeriodAverage, PeriodDayAhead };
+  const QChar Separator = '|';
+  const QString EmptyString = "";
+  const QChar ValueFormat = 'G';
+  const int Precision = 6;
 
 }
 

@@ -4,12 +4,17 @@
 #include <QMap>
 #include <QString>
 #include <logger.h>
-#include "NeuralConfig.h"
+//#include "NeuralConfig.h"
 #include <constants.h>
 #include <QTime>
 #include <assert.h>
 #include "util.h"
+#include "constants.h"
+#include <memory>
 
+#include "datasections.h"
+
+/*
 struct AssetsConfig
 {
   double Money_;
@@ -23,6 +28,9 @@ struct MiscConfig
   unsigned int TimerInterval_;
   QTime Time_Complete_Transaction_;
   QTime Time_Predict_Price_;
+  QMap<QString, QFile> DatasetFiles_;
+  QString DefaultTrainSetName_;
+
 };
 
 struct AgentInfoConfig
@@ -53,39 +61,56 @@ struct ParseConfig
   QString UrlPrices2013Daily_;
 };
 
+*/
+
 
 class Config
 {
 public:
-  Config(QMap<QString, QMap<QString, QString> > configmap) : dataMap_(configmap), Empty_(), neuralConfig_()
+  Config(QMap<QString, QMap<QString, QString> > configmap) : dataMap_(configmap), neuralConfig_()
   {
+    neuralConfig_ = std::make_shared<DataNeuralSection>("ann", dataMap_["ann"]);
+    assetsConfig_ = std::make_shared<DataAssetSection>("assets", dataMap_["assets"]);
+    miscConfig_ = std::make_shared<DataMiscSection>("misc", dataMap_["misc"]);
+    agentInfoConfig_ = std::make_shared<DataAgentSection>("agentinfo", dataMap_["agentinfo"]);
+    parseConfig_ = std::make_shared<DataParseSection>("parse", dataMap_["parse"]);
     reloadConfigs();
   }
 
   void reloadConfigs()
   {
-    loadNeuralConfig();
-    loadAssetsConfig();
-    loadMiscConfig();
-    loadAgentInfoConfig();
-    loadParseConfig();
+//    loadNeuralConfig();
+//    loadAssetsConfig();
+//    loadMiscConfig();
+//    loadAgentInfoConfig();
+//    loadParseConfig();
+    neuralConfig()->load();
+    assetsConfig()->load();
+    miscConfig()->load();
+    agentInfoConfig()->load();
+    parseConfig()->load();
   }
 
   void save()
   {
+    neuralConfig()->save();
+    assetsConfig()->save();
+    miscConfig()->save();
+    agentInfoConfig()->save();
+    parseConfig()->save();
     Util::writeFile("config.ini", this->toString().toStdString(), true);
   }
+  /*
 
   QString value(const QString& section, const QString& key)
   {
-    if(!dataMap_.contains(section)) { Logger::get().append("Config.value: section not found.", true); return Empty_; }
-    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found: " + key , true); return Empty_; }
+    if(!isValid(section, key)) return Empty_;
     return dataMap_[section][key];
   }
   void setValue(const QString& section, const QString& key, double value)
   {
-    if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return; }
-    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found: " + key, true); return; }
+    if(!isValid(section, key))
+      return;
     dataMap_[section][key] = QString::number(value);
 
     // It's suboptimal, but currently it's just a fix expanding on a little shortsighted future set that was assumed to have values that
@@ -96,20 +121,52 @@ public:
     save();
   }
 
+  void setValue(const QString& section, const QString& key, QList<QString> values)
+  {
+    if(!isValid(section, key))
+      return;
+
+    dataMap_[section][key] = "";
+    for(QString value : values)
+      dataMap_[section][key].append(value + "|");
+
+    reloadConfigs();
+    save();
+  }
+
   void setValue(const QString& section, const QString& key, unsigned int value)
   {
-    if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return; }
-    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return; }
+    if(!isValid(section, key))
+      return;
+
     dataMap_[section][key] = QString::number(value);
     reloadConfigs();
     save();
   }
 
-  const NeuralConfig& neuralConfig() const { return neuralConfig_; }
-  const AssetsConfig& assetsConfig() const { return assetsConfig_; }
-  const MiscConfig& miscConfig() const { return miscConfig_; }
-  const AgentInfoConfig& agentInfoConfig() const { return agentInfoConfig_; }
-  const ParseConfig& parseConfig() const { return parseConfig_; }
+  void appendValue(const QString& section, const QString& key, QString value)
+  {
+    if(!isValid(section, key))
+      return;
+
+    dataMap_[section][key].append(value);
+    reloadConfigs();
+    save();
+  }
+
+  bool isValid(const QString& section, const QString& key)
+  {
+    if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return false; }
+    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return false; }
+    return true;
+  }
+  */
+
+  std::shared_ptr<DataNeuralSection> neuralConfig() { return neuralConfig_; }
+  std::shared_ptr<DataAssetSection> assetsConfig() { return assetsConfig_; }
+  std::shared_ptr<DataMiscSection> miscConfig() { return miscConfig_; }
+  std::shared_ptr<DataAgentSection> agentInfoConfig() { return agentInfoConfig_; }
+  std::shared_ptr<DataParseSection> parseConfig() { return parseConfig_; }
 
 
   QString toString()
@@ -129,14 +186,22 @@ public:
 
 private:
   QMap<QString, QMap<QString, QString> > dataMap_;
-  const QString Empty_;
-  NeuralConfig neuralConfig_;
-  AssetsConfig assetsConfig_;
-  MiscConfig miscConfig_;
-  AgentInfoConfig agentInfoConfig_;
-  ParseConfig parseConfig_;
+//  const QString Empty_;
+//  NeuralConfig neuralConfig_;
+//  AssetsConfig assetsConfig_;
+//  MiscConfig miscConfig_;
+//  AgentInfoConfig agentInfoConfig_;
+//  ParseConfig parseConfig_;
+
+    std::shared_ptr<DataNeuralSection> neuralConfig_;
+    std::shared_ptr<DataAssetSection> assetsConfig_;
+    std::shared_ptr<DataMiscSection> miscConfig_;
+    std::shared_ptr<DataAgentSection> agentInfoConfig_;
+    std::shared_ptr<DataParseSection> parseConfig_;
 
 
+
+  /*
   void loadNeuralConfig()
   {
     const QString Section = "ann";
@@ -168,6 +233,9 @@ private:
     miscConfig_.TimerInterval_ = value(Section, "timer_interval").toUInt(); assert(miscConfig_.TimerInterval_ > 0);
     miscConfig_.Time_Complete_Transaction_ = QTime::fromString(value(Section, "time_complete_transaction"), Constants::TimeFormat);
     miscConfig_.Time_Predict_Price_ = QTime::fromString(value(Section, "time_predict_price"), Constants::TimeFormat);
+    //miscConfig_.DatasetFiles_ = value(Section, "dataSetFiles").trimmed().split(Constants::Separator);
+    miscConfig_.DefaultTrainSetName_ = value(Section, "defaultTrainSetName");
+
   }
 
   void loadAgentInfoConfig()
@@ -198,6 +266,7 @@ private:
     parseConfig_.UrlSpot_ = value(Section, "url_spot");
     parseConfig_.UrlPrices2013Daily_ = value(Section, "url_prices2013daily");
   }
+  */
 
 };
 

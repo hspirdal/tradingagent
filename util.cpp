@@ -259,5 +259,14 @@ std::deque<Order> Util::loadOrderFile(const QString& filename)
   return orders;
 }
 
+QList<QString> Util::absoluteFilePath(QList<QFile *> files)
+{
+  QList<QString> list;
+  for(QFile* file : files)
+    list.append(file->fileName());
+
+  return list;
+}
+
 
 

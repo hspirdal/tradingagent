@@ -9,6 +9,7 @@
 #include "Order.h"
 #include <deque>
 #include <QFile>
+#include <QFileInfo>
 
 class Util
 {
@@ -25,6 +26,13 @@ public:
   static bool writeFile(const std::string& filename, const std::string& content, bool overwrite = false);
   static QString readFile(const QString filename);
   static std::deque<Order> loadOrderFile(const QString& filename);
+  static QList<QString> absoluteFilePath(QList<QFile*> files);
+  static QString actualFileName(const QFile& file) { QFileInfo fileInfo(file.fileName()); return fileInfo.fileName(); }
+
+  static QString numberFormat(double value)
+  {
+  return QString::number(value, 'G', 6);
+  }
 
   static bool lessEqualAbs(double a, double b, double epsilon = 10e-8)
   {

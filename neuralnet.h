@@ -1,11 +1,6 @@
 #ifndef NEURALNET_H
 #define NEURALNET_H
 
-//#include "floatfann.h"
-//#include <doublefann.h>
-//#include "3rdparty/FANN/floatfann.h"
-//#include "3rdparty/FANN/doublefann.h"
-//#include <fann_cpp.h>
 #include "3rdparty/FANN/floatfann.h"
 #include "3rdparty/FANN/fann_cpp.h"
 #include <QString>
@@ -15,7 +10,7 @@
 #include "TrainingSet.h"
 #include <memory>
 #include <deque>
-#include "NeuralConfig.h"
+#include "Config.h"
 #include "constants.h"
 #include "applicationlogger.h"
 #include "ui_mainwindow.h"
@@ -23,7 +18,7 @@
 class NeuralNet
 {
 public:
-  NeuralNet(const NeuralConfig& config, std::shared_ptr<ApplicationLogger> log, Ui::MainWindow* window);
+  NeuralNet(std::shared_ptr<Config> config, std::shared_ptr<ApplicationLogger> log, Ui::MainWindow* window);
   ~NeuralNet();
 
   void createTrainSetAverage(const QString& trainSetName, const QMap<QDateTime, double>& spotprices, const unsigned int DayPeriod);
@@ -47,7 +42,8 @@ public:
 
 
 private:
-  const NeuralConfig& config_;
+  std::shared_ptr<Config> config_;
+  std::shared_ptr<DataNeuralSection> neurConfig_;
   std::shared_ptr<ApplicationLogger> log_;
   const QString Nameset_;
   const double MaxPriceExpected_;

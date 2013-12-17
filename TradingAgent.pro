@@ -39,7 +39,9 @@ HEADERS  += mainwindow.h \
     NeuralConfig.h \
     agentcontroller.h \
     Order.h \
-    applicationlogger.h
+    applicationlogger.h \
+    datasections.h \
+    basedatasection.h
 
 FORMS    += mainwindow.ui
 

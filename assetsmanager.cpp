@@ -11,8 +11,8 @@ AssetsManager::AssetsManager(std::shared_ptr<Config> config, std::shared_ptr<Tra
 
 unsigned int AssetsManager::nextOrderNumber()
 {
-  unsigned int next = config_->assetsConfig().OrderNumber_ + 1;
-  config_->setValue(SectionName, "currentOrderNumber", next);
+  unsigned int next = config_->assetsConfig()->OrderNumber_ + 1;
+  config_->assetsConfig()->setValue("currentOrderNumber", next);
   return next;
 }
 
@@ -67,20 +67,19 @@ void AssetsManager::setupAvoidSellingEnergy(double predictedPrice)
 void AssetsManager::setRealSystemPrice(double sysPriceReal)
 {
   sysPriceReal_ = sysPriceReal;
-  config_->setValue(SectionName, "lastSysPrice", sysPriceReal_);
+  config_->assetsConfig()->setValue("lastSysPrice", sysPriceReal_);
 }
 
 void AssetsManager::setMoney(double money)
 {
   money_ = money;
-  config_->setValue(SectionName, "money" , money_);
-  qDebug() << "money:" << config_->value("assets", "money");
+  config_->assetsConfig()->setValue("money" , money_);
 }
 
 void AssetsManager::setEnergy(double energy)
 {
   energy_ = energy;
-  config_->setValue(SectionName, "energy" , energy_);
+  config_->assetsConfig()->setValue("energy" , energy_);
 }
 
 bool AssetsManager::rule_moneyHighEnergyLow()
@@ -122,9 +121,9 @@ void AssetsManager::completeRemainingTransactions()
       log_->logTransferSoldEnergy(order, energy(), money(), sysPriceReal_);
     }
     remainingOrders_.pop_front();
-    config_->setValue(SectionName, "money" , money_);
-    config_->setValue(SectionName, "energy" , energy_);
-    config_->setValue(SectionName, "lastSysPrice" , sysPriceReal_);
+    config_->assetsConfig()->setValue("money" , money_);
+    config_->assetsConfig()->setValue("energy" , energy_);
+    config_->assetsConfig()->setValue("lastSysPrice" , sysPriceReal_);
     saveOrders();
   }
 }

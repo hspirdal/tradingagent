@@ -8,7 +8,7 @@ AgentController::AgentController(std::shared_ptr<Config> config, std::shared_ptr
   this->isFreshPriceData_ = false;
 
   // Wouldn't want to reset various flags if program was restarted for some reason.
-  if(config_->agentInfoConfig().ResetFlagsOnStartup_)
+  if(config_->agentInfoConfig()->ResetFlagsOnStartup_)
     resetFlags();
 
   // track days gone past, and use it to become more aggressive after a while.
@@ -57,7 +57,7 @@ void AgentController::predictPriceAhead()
 
     // Depending on scale and probability, this could be a good time to buy.
     // never buy more than [max] of total money assets.
-    const double percent = Util::clamp(1-ratio, Constants::ApproxZeroDouble, config_->agentInfoConfig().MaxMoneySpend_);
+    const double percent = Util::clamp(1-ratio, Constants::ApproxZeroDouble, config_->agentInfoConfig()->MaxMoneySpend_);
     const double moneyToSpend = assets_->money() * percent;
     const double unitsToBuy = moneyToSpend / assets_->realSystemPrice();
     assets_->setupBuyEnergyOrder(unitsToBuy, dayAheadprice);
@@ -75,7 +75,7 @@ void AgentController::predictPriceAhead()
 
     // like above, it can be profitable to sell if the change is big enough.
     // never sell more than [max] of total money assets.
-    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, config_->agentInfoConfig().MaxEnergySell_);
+    const double percent = Util::clamp(ratio - 1, Constants::ApproxZeroDouble, config_->agentInfoConfig()->MaxEnergySell_);
     const double energyToSell = assets_->energy() * percent;
     assets_->setupSellEnergy(energyToSell, dayAheadprice);
   }
@@ -84,12 +84,12 @@ void AgentController::predictPriceAhead()
 void AgentController::createAndTrainSet(const QString &trainSetName, const QMap<QDateTime, double> &spotprices)
 {
   const QString avg = "avg_" + trainSetName;
-  neurnet_.get()->createTrainSetAverage(avg, spotprices, config_.get()->neuralConfig().DayAheadLong_);
+  neurnet_.get()->createTrainSetAverage(avg, spotprices, config_->neuralConfig()->DayAheadLong_);
   neurnet_.get()->trainSet(avg);
   log_->append("CreateAndTrainSet: created and trained file named " + avg, true);
 
   const QString ahead = "dayahead_" + trainSetName;
-  neurnet_.get()->createTrainSetDayAhead(ahead, spotprices, config_.get()->neuralConfig().DayPeriod_);
+  neurnet_.get()->createTrainSetDayAhead(ahead, spotprices, config_->neuralConfig()->DayPeriod_);
   neurnet_.get()->trainSet(ahead);
   log_->append("CreateAndTrainSet: created and trained file named " + ahead, true);
 }
@@ -104,13 +104,13 @@ void AgentController::setLatestDailyPrices(const QMap<QDateTime, double>& latest
   {
     i.previous();
     latestDailyPrices_.push_back(i.value());
-    if(latestDailyPrices_.size() >= config_.get()->neuralConfig().DayPeriod_)
+    if(latestDailyPrices_.size() >= config_->neuralConfig()->DayPeriod_)
       break;
   }
   // Reverse it back i correct order.
   std::reverse(latestDailyPrices_.begin(), latestDailyPrices_.end());
   isFreshPriceData_ = true;
-  log_->append("Updated fresh system prices for the last " + QString::number(config_->neuralConfig().DayPeriod_) + " days.", true);
+  log_->append("Updated fresh system prices for the last " + QString::number(config_->neuralConfig()->DayPeriod_) + " days.", true);
 }
 
 void AgentController::resetFlags()
@@ -129,7 +129,7 @@ void AgentController::resetFlags()
 
 void AgentController::completeRemainingTransactions()
 {
-  if(!hasCompletedTransaction() && QDateTime::currentDateTime().time().hour() >= config_->miscConfig().Time_Complete_Transaction_.hour())
+  if(!hasCompletedTransaction() && QDateTime::currentDateTime().time().hour() >= config_->miscConfig()->Time_Complete_Transaction_.hour())
   {
     setHasCompletedTransaction(true);
     assets_->completeRemainingTransactions();
@@ -140,7 +140,7 @@ void AgentController::completeRemainingTransactions()
 
 bool AgentController::tryToWake()
 {
-  if(config_->agentInfoConfig().CurrentDay_ < static_cast<unsigned int>(QDateTime::currentDateTime().date().day()))
+  if(config_->agentInfoConfig()->CurrentDay_ < static_cast<unsigned int>(QDateTime::currentDateTime().date().day()))
   {
     // It is next day. Time to clear all prev flags.
     resetFlags();
@@ -158,17 +158,17 @@ void AgentController::setSystemPrice(double systemPrice)
 
 void AgentController::setHasMadeOrder(bool hasMadeOrder)
 {
-  config_->setValue("agentinfo", "hasMadeOrder", static_cast<unsigned int>(hasMadeOrder ? 1:0));
+  config_->agentInfoConfig()->setValue("hasMadeOrder", static_cast<unsigned int>(hasMadeOrder ? 1:0));
 }
 
 void AgentController::setHasCompletedTransaction(bool hasCompletedTransaction)
 {
-  config_->setValue("agentinfo", "hasCompletedTransaction", static_cast<unsigned int>(hasCompletedTransaction ? 1:0));
+  config_->agentInfoConfig()->setValue("hasCompletedTransaction", static_cast<unsigned int>(hasCompletedTransaction ? 1:0));
   setSleeping(hasCompletedTransaction);
 }
 void AgentController::setSleeping(bool sleeping)
 {
-  config_->setValue("agentinfo", "isAgentSleeping", static_cast<unsigned int>(sleeping ? 1:0));
+  config_->agentInfoConfig()->setValue("isAgentSleeping", static_cast<unsigned int>(sleeping ? 1:0));
   if(sleeping)
     log_->append("Agent going to sleep until next calendar day.", true);
   else
@@ -176,5 +176,5 @@ void AgentController::setSleeping(bool sleeping)
 }
 void AgentController::setCurrentDay(unsigned int day)
 {
-  config_->setValue("agentinfo", "currentDay", day);
+  config_->agentInfoConfig()->setValue("currentDay", day);
 }

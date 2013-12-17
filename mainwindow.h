@@ -42,12 +42,10 @@ private slots:
 
 
   void on_btnAddDataset_clicked();
-
   void on_btnRemoveDataset_clicked();
 
 private:
   Ui::MainWindow *ui;
-  QMap<QString, QFile*> rawDataFiles_;
   std::shared_ptr<AssetsManager> assets_;
   std::shared_ptr<NeuralNet> neurnet_;
   std::shared_ptr<Config> config_;
@@ -63,8 +61,9 @@ private:
   void fetchFreshPrices();
   void fetchFreshPricesFromDisk();
 
-  void addDataset(const QString& filename);
-  void removeDataset(int itemIndex);
+  void reloadDatasetFiles();
+//  void addDataset(const QString& filename);
+//  void removeDataset(int itemIndex);
 
 
 
