@@ -153,7 +153,7 @@ void AgentController::setSystemPrice(double systemPrice)
 {
   assets_->setRealSystemPrice(systemPrice);
   isFreshSystemPrice_ = true;
-  log_->append("AgentController - Updated the system price.", true);
+  //log_->append("AgentController - Updated the system price.", true);
 }
 
 void AgentController::setHasMadeOrder(bool hasMadeOrder)
