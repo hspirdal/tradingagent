@@ -40,6 +40,7 @@ public:
     QString datasetFileNames;
     for(auto itr = DatasetFiles_.begin(); itr != DatasetFiles_.end(); ++itr)
       datasetFileNames.append(itr.value()->fileName() + Constants::Separator);
+    datasetFileNames = datasetFileNames.remove(datasetFileNames.length()-1, 1); // remove last sep
     appendConfigLine(sectionData, "dataSetFiles", datasetFileNames);
     appendConfigLine(sectionData, "defaultTrainSetName", DefaultTrainSetName_);
     return sectionData;
@@ -150,8 +151,7 @@ public:
     SmtpPort_ = value("smtpport",sectionMap).toUInt();
     AgentId_ = value("agent_id", sectionMap).toUInt();
     SendEmail_ = value("sendEmail", sectionMap).toUInt() > 0;
-    receiverEmail_ = value("receiverEmail", sectionMap);
-    receiverEmail2_ = value("receiverEmail2", sectionMap);
+    receiversEmail_= value("receiverEmail", sectionMap).trimmed().split(Constants::Separator);
     MaxMoneySpend_ = value("maxMoneySpend",sectionMap).toDouble();
     MaxEnergySell_ = value("maxEnergySell", sectionMap).toDouble();
     CurrentDay_ = value("currentDay", sectionMap).toUInt();
@@ -171,8 +171,11 @@ public:
     appendConfigLine(sectionData, "smtpport", QString::number(SmtpPort_));
     appendConfigLine(sectionData, "agent_id", QString::number(AgentId_));
     appendConfigLine(sectionData, "sendEmail", QString::number(SendEmail_ > 0 ? 1 : 0));
-    appendConfigLine(sectionData, "receiverEmail", receiverEmail_);
-    appendConfigLine(sectionData, "receiverEmail2", receiverEmail2_);
+    QString emailReceivers;
+    for(QString recAddr : receiversEmail_)
+      emailReceivers.append(recAddr + Constants::Separator);
+    emailReceivers = emailReceivers.remove(emailReceivers.length()-1, 1); // remove last sep
+    appendConfigLine(sectionData, "receiverEmail", emailReceivers);
     appendConfigLine(sectionData, "maxMoneySpend", Util::numberFormat(MaxMoneySpend_));
     appendConfigLine(sectionData, "maxEnergySell", Util::numberFormat(MaxEnergySell_));
     appendConfigLine(sectionData, "currentDay", QString::number(CurrentDay_));
@@ -185,8 +188,7 @@ public:
 
   QString ClientEmailAddr_;
   QString ClientName_;
-  QString receiverEmail_;
-  QString receiverEmail2_;
+  QList<QString> receiversEmail_;
 
   QString SmtpPassw_;
   QString SmtpClient_;

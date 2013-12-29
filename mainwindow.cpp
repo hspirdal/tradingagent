@@ -14,13 +14,12 @@ MainWindow::MainWindow(QWidget *parent)
 
   config_ = std::make_shared<Config>();
   //QString logfile, const QString& clientEmailAddr, const QString& clientSenderName, const QString& clientGmailPassw, QList<QString> recipients
-  QList<QString> recipients; recipients << config_->agentInfoConfig().receiverEmail_ << config_->agentInfoConfig().receiverEmail2_;
   log_ = std::make_shared<ApplicationLogger>("log.log", config_->agentInfoConfig().ClientEmailAddr_, config_->agentInfoConfig().ClientName_,
-            config_->agentInfoConfig().SmtpPassw_, recipients);
+            config_->agentInfoConfig().SmtpPassw_, config_->agentInfoConfig().receiversEmail_);
 
 
   transLog_ = std::make_shared<TransactionLogger>("transaction.log", config_->agentInfoConfig().ClientEmailAddr_,
-  config_->agentInfoConfig().ClientName_,config_->agentInfoConfig().SmtpPassw_, recipients, config_);
+  config_->agentInfoConfig().ClientName_,config_->agentInfoConfig().SmtpPassw_, config_->agentInfoConfig().receiversEmail_, config_);
 
 
 
@@ -46,8 +45,6 @@ MainWindow::MainWindow(QWidget *parent)
 
   ui->cmbDatasets->clear();
   ui->txtTrainerFileName->setText(config_->miscConfig().DefaultTrainSetName_);
-//  for(QString filename : config_->miscConfig()->DatasetFiles_)
-//    addDataset(filename);
 
   reloadDatasetFiles();
 
@@ -57,8 +54,6 @@ MainWindow::MainWindow(QWidget *parent)
   updateAll();
 
   // TODO: add mails on own line in config.
-  // TODO: add default datasets in config.
-
 }
 
 MainWindow::~MainWindow()
