@@ -4,9 +4,9 @@
 NeuralNet::NeuralNet(std::shared_ptr<Config> config, std::shared_ptr<ApplicationLogger> log, Ui::MainWindow* window)
 :
   config_(config), neurConfig_(config_->neuralConfig()), log_(log),
-  Nameset_(neurConfig_->Nameset_), MaxPriceExpected_(neurConfig_->MaxPriceExpected_),
-  DayAheadLong_(neurConfig_->DayAheadLong_), NumLayers_(neurConfig_->NumLayers_), NumNeuronsHidden_(neurConfig_->NumNeuronsHidden_),
-  NumOutputs_(neurConfig_->NumOutputs_), DesiredError_(neurConfig_->DesiredError_), MaxEpochs_(neurConfig_->MaxEpochs_), EpochsBetweenReports_(neurConfig_->EpochsBetweenReports_)
+  Nameset_(neurConfig_.Nameset_), MaxPriceExpected_(neurConfig_.MaxPriceExpected_),
+  DayAheadLong_(neurConfig_.DayAheadLong_), NumLayers_(neurConfig_.NumLayers_), NumNeuronsHidden_(neurConfig_.NumNeuronsHidden_),
+  NumOutputs_(neurConfig_.NumOutputs_), DesiredError_(neurConfig_.DesiredError_), MaxEpochs_(neurConfig_.MaxEpochs_), EpochsBetweenReports_(neurConfig_.EpochsBetweenReports_)
   {
     neurnet_ = std::unique_ptr<FANN::neural_net>(new FANN::neural_net());
     window_ = window;
@@ -108,7 +108,7 @@ void NeuralNet::trainSet(const QString& setname)
 
 void NeuralNet::trainSet(DataTrainSet &set)
 {
-  const unsigned int num_input = neurConfig_->DayPeriod_;
+  const unsigned int num_input = neurConfig_.DayPeriod_;
   const unsigned int num_output = NumOutputs_;
   const unsigned int num_layers = NumLayers_;
   const unsigned int num_neurons_hidden = NumNeuronsHidden_;

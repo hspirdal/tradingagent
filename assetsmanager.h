@@ -18,9 +18,9 @@ public:
   void setupAvoidBuyingEnergy(double predictedPrice);
   void setupAvoidSellingEnergy(double predictedPrice);
 
-  double money() const { return money_; }
-  double energy() const { return energy_; }
-  double realSystemPrice() const { return sysPriceReal_; }
+  double money() const { return config_->assetsConfig().money(); }
+  double energy() const { return config_->assetsConfig().energy(); }
+  double realSystemPrice() const { return config_->assetsConfig().lastSysPrice(); }
   void setMoney(double money);
   void setEnergy(double energy);
   void setRealSystemPrice(double sysPriceReal);
@@ -34,9 +34,9 @@ public:
 private:
   std::shared_ptr<Config> config_;
   std::shared_ptr<TransactionLogger> log_;
-  double money_;
-  double energy_;
-  double sysPriceReal_;
+//  double money_;
+//  double energy_;
+//  double sysPriceReal_;
   std::deque<Order> remainingOrders_;
 
 
@@ -46,10 +46,10 @@ private:
   const QString SectionName = "assets";
 
   // Temp methods that should later hold more rigorous checking typical for any transaction apps.
-  void withdrawFunds(double amount) { money_ -= amount; }
-  void withdrawEnergy(double amount) { energy_ -= amount; }
-  void appendFunds(double amount) { money_ += amount; }
-  void appendEnergy(double amount) { energy_ += amount; }
+  void withdrawFunds(double amount) { setMoney(money() - amount); }
+  void withdrawEnergy(double amount) { setEnergy(energy() - amount); }
+  void appendFunds(double amount) { setMoney(money() + amount); }
+  void appendEnergy(double amount) { setEnergy(energy() + amount); }
 
   unsigned int nextOrderNumber();
   void saveOrders();

@@ -23,10 +23,10 @@ public:
     //QDateTime currentDate() const { return currentTime_; }
     bool isFreshSystemPrice() const { return isFreshSystemPrice_; }
     bool isFreshPriceData() const { return isFreshPriceData_; }
-    bool currentDay() const { return config_->agentInfoConfig()->CurrentDay_; }
-    bool hasMadeOrder() const { return config_->agentInfoConfig()->HasMadeOrder_; }
-    bool hasCompletedTransaction() const { return config_->agentInfoConfig()->HasCompletedTransaction_; }
-    bool agentSleepingUntilNextDay() const { return config_->agentInfoConfig()->IsAgentSleeping_; }
+    bool currentDay() const { return config_->agentInfoConfig().CurrentDay_; }
+    bool hasMadeOrder() const { return config_->agentInfoConfig().HasMadeOrder_; }
+    bool hasCompletedTransaction() const { return config_->agentInfoConfig().HasCompletedTransaction_; }
+    bool agentSleepingUntilNextDay() const { return config_->agentInfoConfig().IsAgentSleeping_; }
 
     bool tryToWake();
     void completeRemainingTransactions();

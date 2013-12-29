@@ -2,17 +2,19 @@
 #include "constants.h"
 #include "util.h"
 
+// TODO: Having to save per call anytime we set config values is error prone.
 
 AssetsManager::AssetsManager(std::shared_ptr<Config> config, std::shared_ptr<TransactionLogger> log)
-  : config_(config), log_(log), money_(0.0), energy_(0), sysPriceReal_(0.0)
+  : config_(config), log_(log)
 {
   loadOrders();
 }
 
 unsigned int AssetsManager::nextOrderNumber()
 {
-  unsigned int next = config_->assetsConfig()->OrderNumber_ + 1;
-  config_->assetsConfig()->setValue("currentOrderNumber", next);
+  unsigned int next = config_->assetsConfig().orderNumber() + 1;
+  config_->assetsConfig().setOrderNumber(next);
+  config_->save();
   return next;
 }
 
@@ -33,7 +35,7 @@ void AssetsManager::loadOrders()
 
 bool AssetsManager::setupBuyEnergyOrder(double amount, double predictedPrice)
 {
-  Order order(amount, 0.0, predictedPrice, sysPriceReal_,  nextOrderNumber());
+  Order order(amount, 0.0, predictedPrice, realSystemPrice(),  nextOrderNumber());
   remainingOrders_.push_back(order);
   log_->logBuyEnergyOrder(order);
   saveOrders();
@@ -46,7 +48,7 @@ bool AssetsManager::setupSellEnergy(double amount, double predictedPrice)
   // The system might allow for the agent to get negative money because number of assets will be bought the next day no matter how the price changes.
   // The rules allow for this, but it might be unfortunate as the rules dicate that we would have to sell all energy on the following turn or lose.
 
-  Order order(0.0, amount, predictedPrice, sysPriceReal_, nextOrderNumber());
+  Order order(0.0, amount, predictedPrice, realSystemPrice(), nextOrderNumber());
   remainingOrders_.push_back((order));
   log_->logSellEnergyOrder(order);
   saveOrders();
@@ -66,20 +68,20 @@ void AssetsManager::setupAvoidSellingEnergy(double predictedPrice)
 
 void AssetsManager::setRealSystemPrice(double sysPriceReal)
 {
-  sysPriceReal_ = sysPriceReal;
-  config_->assetsConfig()->setValue("lastSysPrice", sysPriceReal_);
+  config_->assetsConfig().setLastSysPrice(sysPriceReal);
+  config_->save();
 }
 
 void AssetsManager::setMoney(double money)
 {
-  money_ = money;
-  config_->assetsConfig()->setValue("money" , money_);
+  config_->assetsConfig().setMoney(money);
+  config_->save();
 }
 
 void AssetsManager::setEnergy(double energy)
 {
-  energy_ = energy;
-  config_->assetsConfig()->setValue("energy" , energy_);
+  config_->assetsConfig().setEnergy(energy);
+  config_->save();
 }
 
 bool AssetsManager::rule_moneyHighEnergyLow()
@@ -111,19 +113,19 @@ void AssetsManager::completeRemainingTransactions()
       const double total = order.boughtAmountEnergy_ * realSystemPrice();
       this->withdrawFunds(total);
       this->appendEnergy(order.boughtAmountEnergy_);
-      log_->logTransferBoughtEnergy(order, energy(), money(), sysPriceReal_);
+      log_->logTransferBoughtEnergy(order, energy(), money(), realSystemPrice());
     }
     else if(order.soldAmountEnergy_)
     {
       const double moneyBack = order.soldAmountEnergy_ * realSystemPrice();
       this->withdrawEnergy(order.soldAmountEnergy_);
       this->appendFunds(moneyBack);
-      log_->logTransferSoldEnergy(order, energy(), money(), sysPriceReal_);
+      log_->logTransferSoldEnergy(order, energy(), money(), realSystemPrice());
     }
     remainingOrders_.pop_front();
-    config_->assetsConfig()->setValue("money" , money_);
-    config_->assetsConfig()->setValue("energy" , energy_);
-    config_->assetsConfig()->setValue("lastSysPrice" , sysPriceReal_);
+//    config_->assetsConfig().setMoney(money_);
+//    config_->assetsConfig().setValue("energy" , energy_);
+//    config_->assetsConfig().setValue("lastSysPrice" , sysPriceReal_);
     saveOrders();
   }
 }

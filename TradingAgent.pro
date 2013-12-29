@@ -36,7 +36,6 @@ HEADERS  += mainwindow.h \
     constants.h \
     TrainingSet.h \
     Config.h \
-    NeuralConfig.h \
     agentcontroller.h \
     Order.h \
     applicationlogger.h \

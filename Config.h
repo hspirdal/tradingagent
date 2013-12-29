@@ -14,260 +14,49 @@
 
 #include "datasections.h"
 
-/*
-struct AssetsConfig
-{
-  double Money_;
-  double Energy_;
-  double LastSysPrice_;
-  unsigned int OrderNumber_;
-};
-
-struct MiscConfig
-{
-  unsigned int TimerInterval_;
-  QTime Time_Complete_Transaction_;
-  QTime Time_Predict_Price_;
-  QMap<QString, QFile> DatasetFiles_;
-  QString DefaultTrainSetName_;
-
-};
-
-struct AgentInfoConfig
-{
-  QString ClientEmailAddr_;
-  QString ClientName_;
-  QString receiverEmail_;
-  QString receiverEmail2_;
-
-  QString SmtpPassw_;
-  QString SmtpClient_;
-  unsigned int SmtpPort_;
-  QString SmtpCon_;
-  unsigned int AgentId_;
-  bool SendEmail_;
-  double MaxMoneySpend_;
-  double MaxEnergySell_;
-  unsigned int CurrentDay_;
-  bool HasMadeOrder_;
-  bool HasCompletedTransaction_;
-  bool IsAgentSleeping_;
-  bool ResetFlagsOnStartup_;
-};
-
-struct ParseConfig
-{
-  QString UrlSpot_;
-  QString UrlPrices2013Daily_;
-};
-
-*/
-
 
 class Config
 {
 public:
-  Config(QMap<QString, QMap<QString, QString> > configmap) : dataMap_(configmap), neuralConfig_()
+  Config()
   {
-    neuralConfig_ = std::make_shared<DataNeuralSection>("ann", dataMap_["ann"]);
-    assetsConfig_ = std::make_shared<DataAssetSection>("assets", dataMap_["assets"]);
-    miscConfig_ = std::make_shared<DataMiscSection>("misc", dataMap_["misc"]);
-    agentInfoConfig_ = std::make_shared<DataAgentSection>("agentinfo", dataMap_["agentinfo"]);
-    parseConfig_ = std::make_shared<DataParseSection>("parse", dataMap_["parse"]);
-    reloadConfigs();
+    load();
   }
 
-  void reloadConfigs()
+  void load()
   {
-//    loadNeuralConfig();
-//    loadAssetsConfig();
-//    loadMiscConfig();
-//    loadAgentInfoConfig();
-//    loadParseConfig();
-    neuralConfig()->load();
-    assetsConfig()->load();
-    miscConfig()->load();
-    agentInfoConfig()->load();
-    parseConfig()->load();
+    const QMap<QString, QMap<QString, QString> > configMap = Util::loadIniFile(ConfigFileName_);
+    neuralConfig_.setValues(configMap["ann"]);
+    assetsConfig_.setValues(configMap["assets"]);
+    miscConfig_.setValues(configMap["misc"]);
+    agentInfoConfig_.setValues(configMap["agentinfo"]);
+    parseConfig_.setValues(configMap["parse"]);
   }
 
   void save()
   {
-    neuralConfig()->save();
-    assetsConfig()->save();
-    miscConfig()->save();
-    agentInfoConfig()->save();
-    parseConfig()->save();
-    Util::writeFile("config.ini", this->toString().toStdString(), true);
-  }
-  /*
-
-  QString value(const QString& section, const QString& key)
-  {
-    if(!isValid(section, key)) return Empty_;
-    return dataMap_[section][key];
-  }
-  void setValue(const QString& section, const QString& key, double value)
-  {
-    if(!isValid(section, key))
-      return;
-    dataMap_[section][key] = QString::number(value);
-
-    // It's suboptimal, but currently it's just a fix expanding on a little shortsighted future set that was assumed to have values that
-    // does not change during runtime. If a value changes at runtime, we need to update it 'locally' as well.
-    // the local struct containers are just convenience storage for the same data (in string value) in the mapper.
-    // I could only reload the value that changed, but its a small file; it's easier currently to just reload all of it.
-    reloadConfigs();
-    save();
+    QString configData;
+    configData.append(neuralConfig_.toString());
+    configData.append(assetsConfig_.toString());
+    configData.append(miscConfig_.toString());
+    configData.append(agentInfoConfig_.toString());
+    configData.append(parseConfig_.toString());
+    Util::writeFile(ConfigFileName_.toStdString(), configData.toStdString(), true);
   }
 
-  void setValue(const QString& section, const QString& key, QList<QString> values)
-  {
-    if(!isValid(section, key))
-      return;
-
-    dataMap_[section][key] = "";
-    for(QString value : values)
-      dataMap_[section][key].append(value + "|");
-
-    reloadConfigs();
-    save();
-  }
-
-  void setValue(const QString& section, const QString& key, unsigned int value)
-  {
-    if(!isValid(section, key))
-      return;
-
-    dataMap_[section][key] = QString::number(value);
-    reloadConfigs();
-    save();
-  }
-
-  void appendValue(const QString& section, const QString& key, QString value)
-  {
-    if(!isValid(section, key))
-      return;
-
-    dataMap_[section][key].append(value);
-    reloadConfigs();
-    save();
-  }
-
-  bool isValid(const QString& section, const QString& key)
-  {
-    if(!dataMap_.contains(section)) { Logger::get().append("Config.setValue: section not found", true); return false; }
-    if(!dataMap_[section].contains(key)) { Logger::get().append("Config.value: key not found.", true); return false; }
-    return true;
-  }
-  */
-
-  std::shared_ptr<DataNeuralSection> neuralConfig() { return neuralConfig_; }
-  std::shared_ptr<DataAssetSection> assetsConfig() { return assetsConfig_; }
-  std::shared_ptr<DataMiscSection> miscConfig() { return miscConfig_; }
-  std::shared_ptr<DataAgentSection> agentInfoConfig() { return agentInfoConfig_; }
-  std::shared_ptr<DataParseSection> parseConfig() { return parseConfig_; }
-
-
-  QString toString()
-  {
-    QString contents = "";
-    for(auto itr = dataMap_.begin(); itr != dataMap_.end(); ++itr)
-    {
-      // Write out header
-      contents.append(QString("[%1]\n").arg(itr.key()));
-      // Write out subdata
-      QMap<QString, QString>& subdata = itr.value();
-      for(auto subitr = subdata.begin(); subitr != subdata.end(); ++subitr)
-        contents.append(subitr.key() + '=' + subitr.value() + "\n");
-    }
-    return contents;
-  }
+  DataNeuralSection& neuralConfig() { return neuralConfig_; }
+  DataAssetSection& assetsConfig() { return assetsConfig_; }
+  DataMiscSection& miscConfig() { return miscConfig_; }
+  DataAgentSection& agentInfoConfig() { return agentInfoConfig_; }
+  DataParseSection& parseConfig() { return parseConfig_; }
 
 private:
-  QMap<QString, QMap<QString, QString> > dataMap_;
-//  const QString Empty_;
-//  NeuralConfig neuralConfig_;
-//  AssetsConfig assetsConfig_;
-//  MiscConfig miscConfig_;
-//  AgentInfoConfig agentInfoConfig_;
-//  ParseConfig parseConfig_;
-
-    std::shared_ptr<DataNeuralSection> neuralConfig_;
-    std::shared_ptr<DataAssetSection> assetsConfig_;
-    std::shared_ptr<DataMiscSection> miscConfig_;
-    std::shared_ptr<DataAgentSection> agentInfoConfig_;
-    std::shared_ptr<DataParseSection> parseConfig_;
-
-
-
-  /*
-  void loadNeuralConfig()
-  {
-    const QString Section = "ann";
-    neuralConfig_.Nameset_ = value(Section, "setname"); assert(!neuralConfig_.Nameset_.isEmpty());
-    neuralConfig_.MaxPriceExpected_ = value(Section, "maxPriceExpected").toDouble(); assert(neuralConfig_.MaxPriceExpected_ > 0.0);
-    neuralConfig_.DayAheadShort_ = value(Section, "dayAheadShort").toUInt(); assert(neuralConfig_.DayAheadShort_ > 0);
-    neuralConfig_.DayAheadLong_ = value(Section, "dayAheadLong").toUInt(); assert(neuralConfig_.DayAheadLong_ > 0);
-    neuralConfig_.DayPeriod_ = value(Section, "dayPeriod").toUInt(); assert(neuralConfig_.DayPeriod_ > 0);
-    neuralConfig_.NumLayers_ = value(Section, "numLayers").toUInt(); assert(neuralConfig_.NumLayers_ > 0);
-    neuralConfig_.NumNeuronsHidden_ = value(Section, "numNeuronsHidden").toUInt(); assert(neuralConfig_.NumNeuronsHidden_ > 0);
-    neuralConfig_.NumOutputs_ = value(Section, "numOutputs").toUInt(); assert(neuralConfig_.NumOutputs_ > 0);
-    neuralConfig_.DesiredError_ = value(Section, "DesiredError").toDouble(); assert(neuralConfig_.DesiredError_ > 10e-8);
-    neuralConfig_.MaxEpochs_ = value(Section, "maxEpochs").toUInt(); assert(neuralConfig_.MaxEpochs_ > 0);
-    neuralConfig_.EpochsBetweenReports_ = value(Section, "epochsBetweenReports").toUInt(); assert(neuralConfig_.EpochsBetweenReports_ > 0);
-  }
-
-  void loadAssetsConfig()
-  {
-    const QString Section = "assets";
-    assetsConfig_.Money_ = value(Section, "money").toDouble(); assert(assetsConfig_.Money_ >= 0.0);
-    assetsConfig_.Energy_ = value(Section, "energy").toDouble(); assert(assetsConfig_.Energy_ >= 0.0);
-    assetsConfig_.LastSysPrice_ = value(Section, "lastSysPrice").toDouble(); assert(assetsConfig_.LastSysPrice_ > 1.0);
-    assetsConfig_.OrderNumber_ = value(Section, "currentOrderNumber").toUInt();
-  }
-
-  void loadMiscConfig()
-  {
-    const QString Section = "misc";
-    miscConfig_.TimerInterval_ = value(Section, "timer_interval").toUInt(); assert(miscConfig_.TimerInterval_ > 0);
-    miscConfig_.Time_Complete_Transaction_ = QTime::fromString(value(Section, "time_complete_transaction"), Constants::TimeFormat);
-    miscConfig_.Time_Predict_Price_ = QTime::fromString(value(Section, "time_predict_price"), Constants::TimeFormat);
-    //miscConfig_.DatasetFiles_ = value(Section, "dataSetFiles").trimmed().split(Constants::Separator);
-    miscConfig_.DefaultTrainSetName_ = value(Section, "defaultTrainSetName");
-
-  }
-
-  void loadAgentInfoConfig()
-  {
-    const QString Section = "agentinfo";
-    agentInfoConfig_.ClientEmailAddr_ = value(Section, "clientEmailAddr");
-    agentInfoConfig_.ClientName_ = value(Section, "clientName");
-    agentInfoConfig_.SmtpPassw_ = value(Section, "smtppassw");
-    agentInfoConfig_.SmtpClient_ = value(Section, "smtpclient");
-    agentInfoConfig_.SmtpPort_ = value(Section, "smtpport").toUInt();
-    agentInfoConfig_.SmtpCon_ = value(Section, "smtpcon");
-    agentInfoConfig_.AgentId_ = value(Section, "agent_id").toUInt();
-    agentInfoConfig_.SendEmail_ = value(Section, "sendEmail").toUInt() > 0;
-    agentInfoConfig_.receiverEmail_ = value(Section, "receiverEmail");
-    agentInfoConfig_.receiverEmail2_ = value(Section, "receiverEmail2");
-    agentInfoConfig_.MaxMoneySpend_ = value(Section, "maxMoneySpend").toDouble();
-    agentInfoConfig_.MaxEnergySell_ = value(Section, "maxEnergySell").toDouble();
-    agentInfoConfig_.CurrentDay_ = value(Section, "currentDay").toUInt();
-    agentInfoConfig_.HasMadeOrder_ = value(Section, "hasMadeOrder").toUInt() > 0 ? true : false;
-    agentInfoConfig_.HasCompletedTransaction_ = value(Section, "hasCompletedTransaction").toUInt() > 0 ? true : false;
-    agentInfoConfig_.IsAgentSleeping_ = value(Section, "isAgentSleeping").toUInt() > 0 ? true : false;
-    agentInfoConfig_.ResetFlagsOnStartup_ = value(Section, "resetFlagsOnStartup").toUInt() > 0 ? true : false;
-  }
-
-  void loadParseConfig()
-  {
-    const QString Section = "parse";
-    parseConfig_.UrlSpot_ = value(Section, "url_spot");
-    parseConfig_.UrlPrices2013Daily_ = value(Section, "url_prices2013daily");
-  }
-  */
-
+  DataNeuralSection neuralConfig_;
+  DataAssetSection assetsConfig_;
+  DataMiscSection miscConfig_;
+  DataAgentSection agentInfoConfig_;
+  DataParseSection parseConfig_;
+  const QString ConfigFileName_ = "config.ini";
 };
 
 #endif // CONFIG_H

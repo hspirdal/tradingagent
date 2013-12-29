@@ -62,12 +62,6 @@ private:
   void fetchFreshPricesFromDisk();
 
   void reloadDatasetFiles();
-//  void addDataset(const QString& filename);
-//  void removeDataset(int itemIndex);
-
-
-
-
 
 };
 

@@ -43,7 +43,7 @@ public:
 
 private:
   std::shared_ptr<Config> config_;
-  std::shared_ptr<DataNeuralSection> neurConfig_;
+  DataNeuralSection& neurConfig_;
   std::shared_ptr<ApplicationLogger> log_;
   const QString Nameset_;
   const double MaxPriceExpected_;

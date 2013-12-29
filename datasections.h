@@ -6,11 +6,12 @@
 #include <QFile>
 #include <QFileInfo>
 #include "util.h"
+#include <QDebug>
 
 class DataMiscSection : public BaseDataSection
 {
 public:
-  DataMiscSection(QString sectionName, QMap<QString, QString>& dataMap) : BaseDataSection(sectionName, dataMap) { }
+  DataMiscSection() : BaseDataSection("misc") { }
   virtual ~DataMiscSection()
   {
     for(auto itr = DatasetFiles_.begin(); itr != DatasetFiles_.end(); ++itr)
@@ -19,29 +20,37 @@ public:
     DatasetFiles_.clear();
   }
 
-  virtual void load()
+  virtual void setValues(const QMap<QString, QString> &sectionMap)
   {
-    TimerInterval_ = value("timer_interval").toUInt(); assert(TimerInterval_ > 0);
-    Time_Complete_Transaction_ = QTime::fromString(value("time_complete_transaction"), Constants::TimeFormat);
-    Time_Predict_Price_ = QTime::fromString(value("time_predict_price"), Constants::TimeFormat);
-    QList<QString> dataSetpaths = value("dataSetFiles").trimmed().split(Constants::Separator);
+    TimerInterval_ = value("timer_interval", sectionMap).toUInt(); assert(TimerInterval_ > 0);
+    Time_Complete_Transaction_ = QTime::fromString(value("time_complete_transaction", sectionMap), Constants::TimeFormat);
+    Time_Predict_Price_ = QTime::fromString(value("time_predict_price", sectionMap), Constants::TimeFormat);
+    QList<QString> dataSetpaths = value("dataSetFiles", sectionMap).trimmed().split(Constants::Separator);
     for(QString filepath : dataSetpaths)
       addDataset(filepath);
-    DefaultTrainSetName_ = value("defaultTrainSetName");
+    DefaultTrainSetName_ = value("defaultTrainSetName", sectionMap);
   }
 
-  virtual void save()
+  virtual QString toString() const
   {
-    setValue("timer_interval", QString::number(TimerInterval_));
-    setValue("time_complete_transaction", Time_Complete_Transaction_.toString(Constants::TimeFormat));
-    setValue("time_predict_price", Time_Predict_Price_.toString(Constants::TimeFormat));
+    QString sectionData(QString("[%1]\n").arg(sectionName_));
+    appendConfigLine(sectionData, "timer_interval", QString::number(TimerInterval_));
+    appendConfigLine(sectionData, "time_complete_transaction", Time_Complete_Transaction_.toString(Constants::TimeFormat));
+    appendConfigLine(sectionData, "time_predict_price", Time_Predict_Price_.toString(Constants::TimeFormat));
+    QString datasetFileNames;
     for(auto itr = DatasetFiles_.begin(); itr != DatasetFiles_.end(); ++itr)
-      setValue("dataSetFiles", itr.value()->fileName() + Constants::Separator);
-    setValue("defaultTrainSetName", DefaultTrainSetName_);
+      datasetFileNames.append(itr.value()->fileName() + Constants::Separator);
+    appendConfigLine(sectionData, "dataSetFiles", datasetFileNames);
+    appendConfigLine(sectionData, "defaultTrainSetName", DefaultTrainSetName_);
+    return sectionData;
   }
+
 
   void addDataset(const QString& filename)
   {
+    if(filename.isEmpty())
+      return;
+
     if(!DatasetFiles_.contains(filename))
     {
       QFile* file = new QFile(filename);
@@ -68,45 +77,59 @@ public:
 class DataAssetSection : public BaseDataSection
 {
 public:
-  DataAssetSection(QString sectionName, QMap<QString, QString>& dataMap) : BaseDataSection(sectionName, dataMap) { }
+  DataAssetSection() : BaseDataSection("assets") { }
 
-  virtual void load()
+  virtual void setValues(const QMap<QString, QString> &sectionMap)
   {
-    Money_ = value("money").toDouble(); assert(Money_ >= 0.0);
-    Energy_ = value("energy").toDouble(); assert(Energy_ >= 0.0);
-    LastSysPrice_ = value("lastSysPrice").toDouble(); assert(LastSysPrice_ > 1.0);
-    OrderNumber_ = value("currentOrderNumber").toUInt();
+    money_ = value("money", sectionMap).toDouble(); assert(money_ >= 0.0);
+    energy_ = value("energy", sectionMap).toDouble(); assert(energy_ >= 0.0);
+    lastSysPrice_ = value("lastSysPrice", sectionMap).toDouble(); assert(lastSysPrice_ > 1.0);
+    orderNumber_ = value("currentOrderNumber", sectionMap).toUInt();
   }
 
-  virtual void save()
+  virtual QString toString() const
   {
-    setValue("money", Util::numberFormat(Money_));
-    setValue("energy", Util::numberFormat(Energy_));
-    setValue("lastSysPrice", Util::numberFormat(LastSysPrice_));
-    setValue("currentOrderNumber", QString::number(OrderNumber_));
+    QString sectionData(QString("[%1]\n").arg(sectionName_));
+    appendConfigLine(sectionData, "money", Util::numberFormat(money_));
+    appendConfigLine(sectionData, "energy", Util::numberFormat(energy_));
+    appendConfigLine(sectionData, "lastSysPrice", Util::numberFormat(lastSysPrice_));
+    appendConfigLine(sectionData, "currentOrderNumber", QString::number(orderNumber_));
+    return sectionData;
   }
 
-  double Money_;
-  double Energy_;
-  double LastSysPrice_;
-  unsigned int OrderNumber_;
+  double money() const {return money_; }
+  double energy() const { return energy_; }
+  double lastSysPrice() const { return lastSysPrice_; }
+  unsigned int orderNumber() const { return orderNumber_; }
+  void setMoney(double money) { money_ = money; }
+  void setEnergy(double energy) { energy_ = energy; }
+  void setLastSysPrice(double lastSysPrice) { lastSysPrice_ = lastSysPrice; }
+  void setOrderNumber(unsigned int orderNumber) { orderNumber_ = orderNumber; }
+
+private:
+  double money_;
+  double energy_;
+  double lastSysPrice_;
+  unsigned int orderNumber_;
 };
 
 class DataParseSection : public BaseDataSection
 {
 public:
-  DataParseSection(QString sectionName, QMap<QString, QString>& dataMap) : BaseDataSection(sectionName, dataMap) { }
+  DataParseSection() : BaseDataSection("parse") { }
 
-  virtual void load()
+  virtual void setValues(const QMap<QString, QString> &sectionMap)
   {
-    UrlSpot_ = value("url_spot");
-    UrlPrices2013Daily_ = value("url_prices2013daily");
+    UrlSpot_ = value("url_spot", sectionMap);
+    UrlPrices2013Daily_ = value("url_prices2013daily", sectionMap);
   }
 
-  virtual void save()
+  virtual QString toString() const
   {
-    setValue("url_spot", UrlSpot_);
-    setValue("url_prices2013daily", UrlPrices2013Daily_);
+    QString sectionData(QString("[%1]\n").arg(sectionName_));
+    appendConfigLine(sectionData, "url_spot", UrlSpot_);
+    appendConfigLine(sectionData, "url_prices2013daily", UrlPrices2013Daily_);
+    return sectionData;
   }
 
   QString UrlSpot_;
@@ -116,46 +139,48 @@ public:
 class DataAgentSection : public BaseDataSection
 {
 public:
-  DataAgentSection(QString sectionName, QMap<QString, QString>& dataMap) : BaseDataSection(sectionName, dataMap) { }
+  DataAgentSection() : BaseDataSection("agentinfo") { }
 
-  virtual void load()
+  virtual void setValues(const QMap<QString, QString> &sectionMap)
   {
-    ClientEmailAddr_ = value("clientEmailAddr");
-    ClientName_ = value("clientName");
-    SmtpPassw_ = value("smtppassw");
-    SmtpClient_ = value("smtpclient");
-    SmtpPort_ = value("smtpport").toUInt();
-    AgentId_ = value("agent_id").toUInt();
-    SendEmail_ = value("sendEmail").toUInt() > 0;
-    receiverEmail_ = value("receiverEmail");
-    receiverEmail2_ = value("receiverEmail2");
-    MaxMoneySpend_ = value("maxMoneySpend").toDouble();
-    MaxEnergySell_ = value("maxEnergySell").toDouble();
-    CurrentDay_ = value("currentDay").toUInt();
-    HasMadeOrder_ = value("hasMadeOrder").toUInt() > 0 ? true : false;
-    HasCompletedTransaction_ = value("hasCompletedTransaction").toUInt() > 0 ? true : false;
-    IsAgentSleeping_ = value("isAgentSleeping").toUInt() > 0 ? true : false;
-    ResetFlagsOnStartup_ = value("resetFlagsOnStartup").toUInt() > 0 ? true : false;
+    ClientEmailAddr_ = value("clientEmailAddr", sectionMap);
+    ClientName_ = value("clientName", sectionMap);
+    SmtpPassw_ = value("smtppassw", sectionMap);
+    SmtpClient_ = value("smtpclient", sectionMap);
+    SmtpPort_ = value("smtpport",sectionMap).toUInt();
+    AgentId_ = value("agent_id", sectionMap).toUInt();
+    SendEmail_ = value("sendEmail", sectionMap).toUInt() > 0;
+    receiverEmail_ = value("receiverEmail", sectionMap);
+    receiverEmail2_ = value("receiverEmail2", sectionMap);
+    MaxMoneySpend_ = value("maxMoneySpend",sectionMap).toDouble();
+    MaxEnergySell_ = value("maxEnergySell", sectionMap).toDouble();
+    CurrentDay_ = value("currentDay", sectionMap).toUInt();
+    HasMadeOrder_ = value("hasMadeOrder", sectionMap).toUInt() > 0 ? true : false;
+    HasCompletedTransaction_ = value("hasCompletedTransaction", sectionMap).toUInt() > 0 ? true : false;
+    IsAgentSleeping_ = value("isAgentSleeping", sectionMap).toUInt() > 0 ? true : false;
+    ResetFlagsOnStartup_ = value("resetFlagsOnStartup", sectionMap).toUInt() > 0 ? true : false;
   }
 
-  virtual void save()
+  virtual QString toString() const
   {
-    setValue("clientEmailAddr", ClientEmailAddr_);
-    setValue("clientName", ClientName_);
-    setValue("smtppassw", SmtpPassw_);
-    setValue("smtpclient", SmtpClient_);
-    setValue("smtpport", QString::number(SmtpPort_));
-    setValue("agent_id", QString::number(AgentId_));
-    setValue("sendEmail", QString::number(SendEmail_ > 0 ? 1 : 0));
-    setValue("receiverEmail", receiverEmail_);
-    setValue("receiverEmail2", receiverEmail2_);
-    setValue("maxMoneySpend", Util::numberFormat(MaxMoneySpend_));
-    setValue("maxEnergySell", Util::numberFormat(MaxEnergySell_));
-    setValue("currentDay", QString::number(CurrentDay_));
-    setValue("hasMadeOrder", QString::number(HasMadeOrder_ > 0 ? 1 : 0));
-    setValue("hasCompletedTransaction", QString::number(HasCompletedTransaction_ > 0 ? 1 : 0));
-    setValue("isAgentSleeping", QString::number(IsAgentSleeping_ > 0 ? 1 : 0));
-    setValue("resetFlagsOnStartup", QString::number(ResetFlagsOnStartup_ > 0 ? 1 : 0));
+    QString sectionData(QString("[%1]\n").arg(sectionName_));
+    appendConfigLine(sectionData, "clientEmailAddr", ClientEmailAddr_);
+    appendConfigLine(sectionData, "clientName", ClientName_);
+    appendConfigLine(sectionData, "smtppassw", SmtpPassw_);
+    appendConfigLine(sectionData, "smtpclient", SmtpClient_);
+    appendConfigLine(sectionData, "smtpport", QString::number(SmtpPort_));
+    appendConfigLine(sectionData, "agent_id", QString::number(AgentId_));
+    appendConfigLine(sectionData, "sendEmail", QString::number(SendEmail_ > 0 ? 1 : 0));
+    appendConfigLine(sectionData, "receiverEmail", receiverEmail_);
+    appendConfigLine(sectionData, "receiverEmail2", receiverEmail2_);
+    appendConfigLine(sectionData, "maxMoneySpend", Util::numberFormat(MaxMoneySpend_));
+    appendConfigLine(sectionData, "maxEnergySell", Util::numberFormat(MaxEnergySell_));
+    appendConfigLine(sectionData, "currentDay", QString::number(CurrentDay_));
+    appendConfigLine(sectionData, "hasMadeOrder", QString::number(HasMadeOrder_ > 0 ? 1 : 0));
+    appendConfigLine(sectionData, "hasCompletedTransaction", QString::number(HasCompletedTransaction_ > 0 ? 1 : 0));
+    appendConfigLine(sectionData, "isAgentSleeping", QString::number(IsAgentSleeping_ > 0 ? 1 : 0));
+    appendConfigLine(sectionData, "resetFlagsOnStartup", QString::number(ResetFlagsOnStartup_ > 0 ? 1 : 0));
+    return sectionData;
   }
 
   QString ClientEmailAddr_;
@@ -180,36 +205,38 @@ public:
 class DataNeuralSection : public BaseDataSection
 {
 public:
-  DataNeuralSection(QString sectionName, QMap<QString, QString>& dataMap) : BaseDataSection(sectionName, dataMap) { }
+  DataNeuralSection() : BaseDataSection("ann") { }
 
-  virtual void load()
+  virtual void setValues(const QMap<QString, QString> &sectionMap)
   {
-    Nameset_ = value("setname"); assert(!Nameset_.isEmpty());
-    MaxPriceExpected_ = value( "maxPriceExpected").toDouble(); assert(MaxPriceExpected_ > 0.0);
-    DayAheadShort_ = value("dayAheadShort").toUInt(); assert(DayAheadShort_ > 0);
-    DayAheadLong_ = value("dayAheadLong").toUInt(); assert(DayAheadLong_ > 0);
-    DayPeriod_ = value("dayPeriod").toUInt(); assert(DayPeriod_ > 0);
-    NumLayers_ = value("numLayers").toUInt(); assert(NumLayers_ > 0);
-    NumNeuronsHidden_ = value("numNeuronsHidden").toUInt(); assert(NumNeuronsHidden_ > 0);
-    NumOutputs_ = value("numOutputs").toUInt(); assert(NumOutputs_ > 0);
-    DesiredError_ = value("DesiredError").toDouble(); assert(DesiredError_ > 10e-8);
-    MaxEpochs_ = value("maxEpochs").toUInt(); assert(MaxEpochs_ > 0);
-    EpochsBetweenReports_ = value("epochsBetweenReports").toUInt(); assert(EpochsBetweenReports_ > 0);
+    Nameset_ = value("setname", sectionMap); assert(!Nameset_.isEmpty());
+    MaxPriceExpected_ = value( "maxPriceExpected", sectionMap).toDouble(); assert(MaxPriceExpected_ > 0.0);
+    DayAheadShort_ = value("dayAheadShort", sectionMap).toUInt(); assert(DayAheadShort_ > 0);
+    DayAheadLong_ = value("dayAheadLong", sectionMap).toUInt(); assert(DayAheadLong_ > 0);
+    DayPeriod_ = value("dayPeriod", sectionMap).toUInt(); assert(DayPeriod_ > 0);
+    NumLayers_ = value("numLayers", sectionMap).toUInt(); assert(NumLayers_ > 0);
+    NumNeuronsHidden_ = value("numNeuronsHidden", sectionMap).toUInt(); assert(NumNeuronsHidden_ > 0);
+    NumOutputs_ = value("numOutputs", sectionMap).toUInt(); assert(NumOutputs_ > 0);
+    DesiredError_ = value("DesiredError", sectionMap).toDouble(); assert(DesiredError_ > 10e-8);
+    MaxEpochs_ = value("maxEpochs", sectionMap).toUInt(); assert(MaxEpochs_ > 0);
+    EpochsBetweenReports_ = value("epochsBetweenReports", sectionMap).toUInt(); assert(EpochsBetweenReports_ > 0);
   }
 
-  virtual void save()
+  virtual QString toString() const
   {
-    setValue("setname", Nameset_);
-    setValue("maxPriceExpected", Util::numberFormat(MaxPriceExpected_));
-    setValue("dayAheadShort", QString::number(DayAheadShort_));
-    setValue("dayAheadLong", QString::number(DayAheadLong_));
-    setValue("dayPeriod", QString::number(DayPeriod_));
-    setValue("numLayers", QString::number(NumLayers_));
-    setValue("numNeuronsHidden", QString::number(NumNeuronsHidden_));
-    setValue("numOutputs", QString::number(NumOutputs_));
-    setValue("DesiredError", Util::numberFormat(DesiredError_));
-    setValue("maxEpochs", QString::number(MaxEpochs_));
-    setValue("epochsBetweenReports", QString::number(EpochsBetweenReports_));
+    QString sectionData(QString("[%1]\n").arg(sectionName_));
+    appendConfigLine(sectionData, "setname", Nameset_);
+    appendConfigLine(sectionData, "maxPriceExpected", Util::numberFormat(MaxPriceExpected_));
+    appendConfigLine(sectionData, "dayAheadShort", QString::number(DayAheadShort_));
+    appendConfigLine(sectionData, "dayAheadLong", QString::number(DayAheadLong_));
+    appendConfigLine(sectionData, "dayPeriod", QString::number(DayPeriod_));
+    appendConfigLine(sectionData, "numLayers", QString::number(NumLayers_));
+    appendConfigLine(sectionData, "numNeuronsHidden", QString::number(NumNeuronsHidden_));
+    appendConfigLine(sectionData, "numOutputs", QString::number(NumOutputs_));
+    appendConfigLine(sectionData, "DesiredError", Util::numberFormat(DesiredError_));
+    appendConfigLine(sectionData, "maxEpochs", QString::number(MaxEpochs_));
+    appendConfigLine(sectionData, "epochsBetweenReports", QString::number(EpochsBetweenReports_));
+    return sectionData;
   }
 
   QString Nameset_;
@@ -226,3 +253,6 @@ public:
 };
 
 #endif // DATASECTIONS_H
+
+
+

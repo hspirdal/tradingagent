@@ -5,7 +5,6 @@
 #include <QFileInfo>
 #include "util.h"
 #include "constants.h"
-#include "NeuralConfig.h"
 #include "constants.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -13,24 +12,24 @@ MainWindow::MainWindow(QWidget *parent)
 {
   ui->setupUi(this);
 
-  config_ = std::make_shared<Config>(Util::loadIniFile("config.ini"));
+  config_ = std::make_shared<Config>();
   //QString logfile, const QString& clientEmailAddr, const QString& clientSenderName, const QString& clientGmailPassw, QList<QString> recipients
-  QList<QString> recipients; recipients << config_->agentInfoConfig()->receiverEmail_ << config_->agentInfoConfig()->receiverEmail2_;
-  log_ = std::make_shared<ApplicationLogger>("log.log", config_->agentInfoConfig()->ClientEmailAddr_, config_->agentInfoConfig()->ClientName_,
-            config_->agentInfoConfig()->SmtpPassw_, recipients);
+  QList<QString> recipients; recipients << config_->agentInfoConfig().receiverEmail_ << config_->agentInfoConfig().receiverEmail2_;
+  log_ = std::make_shared<ApplicationLogger>("log.log", config_->agentInfoConfig().ClientEmailAddr_, config_->agentInfoConfig().ClientName_,
+            config_->agentInfoConfig().SmtpPassw_, recipients);
 
 
-  transLog_ = std::make_shared<TransactionLogger>("transaction.log", config_->agentInfoConfig()->ClientEmailAddr_,
-  config_->agentInfoConfig()->ClientName_,config_->agentInfoConfig()->SmtpPassw_, recipients, config_);
+  transLog_ = std::make_shared<TransactionLogger>("transaction.log", config_->agentInfoConfig().ClientEmailAddr_,
+  config_->agentInfoConfig().ClientName_,config_->agentInfoConfig().SmtpPassw_, recipients, config_);
 
 
 
   assets_ = std::make_shared<AssetsManager>(config_, transLog_);
   neurnet_ = std::make_shared<NeuralNet>(config_, log_, ui);
 
-  assets_->setMoney(config_->assetsConfig()->Money_);
-  assets_->setEnergy(config_->assetsConfig()->Energy_);
-  assets_->setRealSystemPrice(config_->assetsConfig()->LastSysPrice_);
+  assets_->setMoney(config_->assetsConfig().money());
+  assets_->setEnergy(config_->assetsConfig().energy());
+  assets_->setRealSystemPrice(config_->assetsConfig().lastSysPrice());
   agentController_ = std::unique_ptr<AgentController>(new AgentController(config_, log_, neurnet_, assets_));
 
 
@@ -41,12 +40,12 @@ MainWindow::MainWindow(QWidget *parent)
 
   ui->txtbxOverviewLog->setReadOnly(true);
   ui->pbTrainingProgress->setMinimum(0);
-  ui->pbTrainingProgress->setMaximum(config_->neuralConfig()->MaxEpochs_);
+  ui->pbTrainingProgress->setMaximum(config_->neuralConfig().MaxEpochs_);
   ui->pbTrainingProgress->hide();
   ui->txtTrainingStatus->setReadOnly(true);
 
   ui->cmbDatasets->clear();
-  ui->txtTrainerFileName->setText(config_->miscConfig()->DefaultTrainSetName_);
+  ui->txtTrainerFileName->setText(config_->miscConfig().DefaultTrainSetName_);
 //  for(QString filename : config_->miscConfig()->DatasetFiles_)
 //    addDataset(filename);
 
@@ -77,12 +76,12 @@ void MainWindow::updateAll()
 
 void MainWindow::fetchLatestSpotPrice()
 {
-  network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig()->UrlSpot_)));
+  network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig().UrlSpot_)));
 }
 
 void MainWindow::fetchFreshPrices()
 {
-  network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig()->UrlPrices2013Daily_)));
+  network_.get()->get(QNetworkRequest(QUrl(config_.get()->parseConfig().UrlPrices2013Daily_)));
 }
 
 void MainWindow::fetchFreshPricesFromDisk()
@@ -102,7 +101,7 @@ void MainWindow::onReply(QNetworkReply *reply)
 {
   if(reply->error() == QNetworkReply::NoError)
   {
-    if(reply->url().toString().compare(config_.get()->parseConfig()->UrlSpot_) == 0)
+    if(reply->url().toString().compare(config_.get()->parseConfig().UrlSpot_) == 0)
     {
       // We're parsing the latest spotprice in NOK from the Nordpool site.
       double spotprice = Util::parseNordpoolSpotpriceNOK(QString(reply->readAll()));
@@ -111,7 +110,7 @@ void MainWindow::onReply(QNetworkReply *reply)
       agentController_->setSystemPrice(spotprice);
       ui->lblSpotPrice->setText(QString::number(assets_.get()->realSystemPrice()));
     }
-    else if(reply->url().toString().compare(config_.get()->parseConfig()->UrlPrices2013Daily_) == 0)
+    else if(reply->url().toString().compare(config_.get()->parseConfig().UrlPrices2013Daily_) == 0)
     {
       // We're grabbing the latest price data for this year, parsing it to a readable format.
       auto a = Util::parseXLS_daily(QString(reply->readAll()));
@@ -121,12 +120,12 @@ void MainWindow::onReply(QNetworkReply *reply)
   else
   {
     // Error downloading http://www.nordpoolspot.com/PageFiles/9383/Elspot Prices_2013_Daily_NOK.xls - server replied: File not found
-    const QString err = "Error downloading  " + config_->parseConfig()->UrlPrices2013Daily_;
+    const QString err = "Error downloading  " + config_->parseConfig().UrlPrices2013Daily_;
     if(reply->errorString().compare(err) == 0)
     {
       // I've detected that the file is down for a small timeperiod at around 07:30, but otherwise seems to stay up.
       // We have plenty of time to try and parse it during the night, so lets just have it try again until it gets time-critical.
-      if(QDateTime::currentDateTime().time().hour() >= config_->miscConfig()->Time_Predict_Price_.hour())
+      if(QDateTime::currentDateTime().time().hour() >= config_->miscConfig().Time_Predict_Price_.hour())
         fetchFreshPricesFromDisk();
       Logger::get().append("MainWindow.OnReply: Error downloading 2013 prices from Nordpool.", true);
     }
@@ -158,12 +157,12 @@ void MainWindow::onTimerUpdate()
       fetchFreshPrices();
 
     // If preliminary stuff is done, start the process of predicting.
-    if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData() && now.time().hour() >= config_.get()->miscConfig()->Time_Predict_Price_.hour())
+    if(agentController_->isFreshSystemPrice() && agentController_->isFreshPriceData() && now.time().hour() >= config_->miscConfig().Time_Predict_Price_.hour())
       agentController_->predictPriceAhead();
 
 
   }
-  else if(agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig()->Time_Complete_Transaction_.hour())
+  else if(agentController_->hasMadeOrder() && now.time().hour() >= config_.get()->miscConfig().Time_Complete_Transaction_.hour())
   {
     // The time should be well past the updated daily price by now. It is time to complete the "frozen" transaction.
     agentController_->completeRemainingTransactions();
@@ -174,14 +173,14 @@ void MainWindow::onTimerUpdate()
 
 void MainWindow::on_btnTrainData_clicked()
 {
-  if(config_->miscConfig()->DatasetFiles_.count() <= 0)
+  if(config_->miscConfig().DatasetFiles_.count() <= 0)
   {
     log_->append("MainWindow.TrainData: No dataset loaded.", true);
     return;
   }
   //QList<QString> files = {"Data/Elspot Prices_2011_Daily_NOK.csv", "Data/Elspot Prices_2012_Daily_NOK.csv", "Data/Elspot Prices_2013_Daily_NOK.csv"};
   //QList<QStringList> dataMatrix = Util::loadCSVFile("Data/Elspot Prices_2013_Daily_NOK.csv", ',');
-  QList<QStringList> dataMatrix = Util::loadCSVFiles(config_->miscConfig()->DatasetFiles_.values(), ',');
+  QList<QStringList> dataMatrix = Util::loadCSVFiles(config_->miscConfig().DatasetFiles_.values(), ',');
   auto prices = Util::extractSystemPriceDaily(dataMatrix);
 
   agentController_.get()->createAndTrainSet(ui->txtTrainerFileName->text(), prices);
@@ -198,7 +197,7 @@ void MainWindow::on_btnStartAgent_clicked()
     agentRunning_ = !agentRunning_;
     if(agentRunning_)
     {
-      timer_->start(config_.get()->miscConfig()->TimerInterval_);
+      timer_->start(config_.get()->miscConfig().TimerInterval_);
       ui->btnStartAgent->setText("Stop Agent");
       ui->lblStatus->setText("Running");
       ui->lblStatus->setStyleSheet("QLabel { color : green }");
@@ -222,10 +221,11 @@ void MainWindow::on_btnRefreshSpot_clicked()
 void MainWindow::on_btnAddDataset_clicked()
 {
   const QString path = QFileDialog::getOpenFileName(this, tr("Open CSV File"), QDir::currentPath(), tr("CSV Files (*.csv)"));
-  config_->miscConfig()->addDataset(path);
+  config_->miscConfig().addDataset(path);
+  config_->save();
 
   // Check if something was added or not.
-  if(config_->miscConfig()->DatasetFiles_.count() == ui->cmbDatasets->count())
+  if(config_->miscConfig().DatasetFiles_.count() == ui->cmbDatasets->count())
     return;
 
   reloadDatasetFiles();
@@ -234,10 +234,11 @@ void MainWindow::on_btnAddDataset_clicked()
 void MainWindow::on_btnRemoveDataset_clicked()
 {
   const QString filename = ui->cmbDatasets->currentText();
-  config_->miscConfig()->removeDataset(filename);
+  config_->miscConfig().removeDataset(filename);
+  config_->save();
 
   // Check if something was deleted or not.
-  if( config_->miscConfig()->DatasetFiles_.count() == ui->cmbDatasets->count())
+  if( config_->miscConfig().DatasetFiles_.count() == ui->cmbDatasets->count())
     return;
 
   reloadDatasetFiles();
@@ -245,40 +246,11 @@ void MainWindow::on_btnRemoveDataset_clicked()
 
 void MainWindow::reloadDatasetFiles()
 {
+  const int currIndex = ui->cmbDatasets->currentIndex() >= 0 ? ui->cmbDatasets->currentIndex() : 0;
   ui->cmbDatasets->clear();
-  auto files = config_->miscConfig()->DatasetFiles_.values();
+  auto files = config_->miscConfig().DatasetFiles_.values();
   for(int i = 0; i < files.count(); i++)
     ui->cmbDatasets->insertItem(i, Util::actualFileName(*files[i]));
-}
 
-/*
-void MainWindow::addDataset(const QString& filename)
-{
-  if(!rawDataFiles_.contains(filename))
-  {
-    QFile* raw = new QFile(filename);
-    QFileInfo fileInfo(raw->fileName());
-    rawDataFiles_.insert(fileInfo.fileName(), raw);
-    ui->cmbDatasets->insertItem(ui->cmbDatasets->count(), fileInfo.fileName());
-    //config_->setValue("misc", "dataSetFiles", Util::absoluteFilePath(rawDataFiles_.values()));
-  }
+  ui->cmbDatasets->setCurrentIndex(currIndex);
 }
-
-void MainWindow::removeDataset(int itemIndex)
-{
-  const QString filename = ui->cmbDatasets->itemText(itemIndex);
-  if(filename.isEmpty())
-  {
-    log_->append("MainWindow.RemoveDataset: itemIndex was not found. Index: " + QString::number(itemIndex), true);
-    return;
-  }
-  if(!rawDataFiles_.contains(filename))
-  {
-    log_->append("MainWindow.RemoveDataset: filename was not found. Filename: " + filename, true);
-    return;
-  }
-  rawDataFiles_.remove(filename);
-  ui->cmbDatasets->removeItem(itemIndex);
-  //config_->setValue("misc", "dataSetFiles", Util::absoluteFilePath(rawDataFiles_.values()));
-}
-*/
